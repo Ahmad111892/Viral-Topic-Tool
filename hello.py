@@ -1,15 +1,6 @@
 import streamlit as st
 import requests
-import pandas as pd
 from datetime import datetime, timedelta
-import random
-import re
-from collections import Counter
-import json
-import time
-from pytrends.request import TrendReq
-import urllib.parse
-import plotly.express as px
 
 # Configuration
 st.set_page_config(page_title="Niche Success Analyzer", page_icon="🎯", layout="wide")
