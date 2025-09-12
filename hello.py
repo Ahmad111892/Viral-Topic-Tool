@@ -134,7 +134,7 @@ def deep_dive_analysis(api_key, channel_id, channel_description):
                         engagement_rate = ((total_likes + total_comments) / total_views) * 100
                         analysis_results["Engagement Score"] = round(engagement_rate, 2)
                     
-                    # --- NEW: Schedule Analysis ---
+                    # --- UPGRADED: Schedule Analysis ---
                     if len(published_dates) > 1:
                         # 4. Calculate Weekly Frequency
                         time_span_days = (max(published_dates) - min(published_dates)).days
@@ -143,14 +143,20 @@ def deep_dive_analysis(api_key, channel_id, channel_description):
                         else:
                             analysis_results["Weekly Frequency"] = len(published_dates) # All videos on same day
 
-                        # 5. Find Most Common Upload Time/Day
-                        upload_hours_utc = [d.hour for d in published_dates]
-                        upload_days_utc = [d.strftime('%A') for d in published_dates]
+                        # 5. Find Top 2 Most Common Upload Time/Day Patterns
+                        upload_slots = [(d.strftime('%A'), d.hour) for d in published_dates]
                         
-                        if upload_hours_utc:
-                            most_common_hour = Counter(upload_hours_utc).most_common(1)[0][0]
-                            most_common_day = Counter(upload_days_utc).most_common(1)[0][0]
-                            analysis_results["Upload Schedule"] = f"Aksar {most_common_day} ko {most_common_hour}:00 UTC ke आसपास"
+                        if upload_slots:
+                            schedule_counter = Counter(upload_slots)
+                            top_slots = schedule_counter.most_common(2) # Get top 2 slots
+
+                            schedule_parts = []
+                            for i, ((day, hour), count) in enumerate(top_slots):
+                                schedule_parts.append(f"{i+1}. Aksar {day} ko {hour}:00 UTC ke आसपास")
+                            
+                            analysis_results["Upload Schedule"] = " | ".join(schedule_parts)
+                            if not analysis_results["Upload Schedule"]:
+                                 analysis_results["Upload Schedule"] = "Koi khaas pattern nahi mila."
 
     except Exception as e:
         # Silently fail to not crash the app, but you could log 'e' here
@@ -271,9 +277,9 @@ with tab2:
 
                             # Intelligence Verdict
                             verdict = ""
-                            if channel['Engagement Score'] > 2 and channel['Content Velocity'] > 8:
+                            if channel['Engagement Score'] > 2 and channel['Weekly Frequency'] > 2:
                                 verdict = "🔥 **Excellent Potential!** High engagement aur high activity. Is niche ko zaroor consider karein."
-                            elif channel['Engagement Score'] > 1:
+                            elif channel['Engagement Score'] > 1.5:
                                 verdict = "👍 **Good Potential.** A-chhi engagement hai, is niche mein value ho sakti hai."
                             else:
                                 verdict = "🤔 **Analyze Karein.** Engagement thori kam hai, lekin growth ke chances ho sakte hain."
