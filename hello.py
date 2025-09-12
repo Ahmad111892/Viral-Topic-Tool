@@ -134,7 +134,7 @@ def deep_dive_analysis(api_key, channel_id, channel_description):
                         engagement_rate = ((total_likes + total_comments) / total_views) * 100
                         analysis_results["Engagement Score"] = round(engagement_rate, 2)
                     
-                    # --- UPGRADED: Schedule Analysis ---
+                    # --- UPGRADED: Schedule Analysis with Counts ---
                     if len(published_dates) > 1:
                         # 4. Calculate Weekly Frequency
                         time_span_days = (max(published_dates) - min(published_dates)).days
@@ -143,16 +143,17 @@ def deep_dive_analysis(api_key, channel_id, channel_description):
                         else:
                             analysis_results["Weekly Frequency"] = len(published_dates) # All videos on same day
 
-                        # 5. Find Top 2 Most Common Upload Time/Day Patterns
+                        # 5. Find Top 2 Most Common Upload Time/Day Patterns with counts
                         upload_slots = [(d.strftime('%A'), d.hour) for d in published_dates]
                         
                         if upload_slots:
                             schedule_counter = Counter(upload_slots)
-                            top_slots = schedule_counter.most_common(2) # Get top 2 slots
+                            top_slots = schedule_counter.most_common(2) 
 
                             schedule_parts = []
                             for i, ((day, hour), count) in enumerate(top_slots):
-                                schedule_parts.append(f"{i+1}. Aksar {day} ko {hour}:00 UTC ke आसपास")
+                                count_text = f"({count} baar)" # "baar" means "times"
+                                schedule_parts.append(f"{i+1}. {day} {hour}:00 UTC {count_text}")
                             
                             analysis_results["Upload Schedule"] = " | ".join(schedule_parts)
                             if not analysis_results["Upload Schedule"]:
@@ -211,13 +212,14 @@ with tab1:
         if not st.session_state.api_key:
             st.error("Barae meharbani sidebar mein apni YouTube API Key daalein.")
         else:
-            # ... [Logic for Viral Topics Finder remains unchanged] ...
+            # This logic can be implemented if needed, for now it's a placeholder
+            st.info("Viral Topics Finder logic yahan implement kiya jayega.")
             keywords = [kw.strip() for kw in user_keywords_input.strip().split('\n') if kw.strip()]
             if not keywords:
                 st.warning("Barae meharbani search karne ke liye kam se kam ek keyword daalein.")
             else:
-                # ... [Existing logic] ...
-                pass # The code for this part is unchanged and correct.
+                # ... [Existing logic could be placed here] ...
+                pass
 
 with tab2:
     st.header("Niche Research Tool")
@@ -273,12 +275,16 @@ with tab2:
                             st.markdown(f"**⚡ Content Velocity:** `{channel['Content Velocity']}` videos pichle 30 dinon mein.")
                             st.markdown(f"**🗓️ Haftawar Frequency:** `{channel['Weekly Frequency']}` videos har hafte (approx).")
                             st.markdown(f"**⏰ Upload Time:** {channel['Upload Schedule']}")
-                            st.caption("Time UTC (Coordinated Universal Time) mein hai.")
+                            st.caption("Time UTC (Coordinated Universal Time) mein hai. Bracket mein di gayi tadad batati hai ke pichli 10 videos mein se kitni baar us time par upload kiya gaya.")
 
                             # Intelligence Verdict
                             verdict = ""
+                            is_consistent = "2." not in channel['Upload Schedule'] and channel['Weekly Frequency'] > 1
+
                             if channel['Engagement Score'] > 2 and channel['Weekly Frequency'] > 2:
-                                verdict = "🔥 **Excellent Potential!** High engagement aur high activity. Is niche ko zaroor consider karein."
+                                verdict = "🔥 **Excellent Potential!** High engagement aur high activity."
+                                if is_consistent:
+                                    verdict += " Schedule bohot consistent hai."
                             elif channel['Engagement Score'] > 1.5:
                                 verdict = "👍 **Good Potential.** A-chhi engagement hai, is niche mein value ho sakti hai."
                             else:
