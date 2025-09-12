@@ -51,7 +51,10 @@ def find_viral_new_channels(api_key, niche_ideas_list):
     all_channel_ids = list(unique_channel_ids)
     
     for i in range(0, len(all_channel_ids), 50):
-        progress_bar.progress((i + 50) / len(all_channel_ids) if len(all_channel_ids) > 0 else 1)
+        # FIX: Ensure progress value does not exceed 1.0
+        progress_value = min((i + 50) / len(all_channel_ids), 1.0) if len(all_channel_ids) > 0 else 1.0
+        progress_bar.progress(progress_value)
+        
         id_batch = all_channel_ids[i:i+50]
         channel_params = {"part": "snippet,statistics", "id": ",".join(id_batch), "key": api_key}
         
