@@ -1,6 +1,11 @@
 streamlit
-pandas
-numpy
 requests
+numpy
+pandas
+scipy
 plotly
 networkx
+textstat
+scikit-learn
+textblob
+openpyxl
