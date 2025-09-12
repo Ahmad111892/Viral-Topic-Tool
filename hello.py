@@ -15,7 +15,7 @@ YOUTUBE_CHANNEL_URL = "https://www.googleapis.com/youtube/v3/channels"
 
 # --- Niche Research Tool Functions ---
 @st.cache_data(ttl=3600) # Cache the results for 1 hour to save API calls
-def find_viral_new_channels(api_key, niche_ideas_list):
+def find_viral_new_channels(api_key, niche_ideas_list, video_type="Any"):
     """
     Researches a user-provided list of niches to find viral channels created in the current year,
     and tracks which niche found the channel.
@@ -37,6 +37,13 @@ def find_viral_new_channels(api_key, niche_ideas_list):
             "publishedAfter": (datetime.utcnow() - timedelta(days=90)).isoformat("T") + "Z",
             "maxResults": 20, "key": api_key
         }
+        
+        # Add video duration filter based on user's choice
+        if video_type == "Shorts Channel":
+            search_params['videoDuration'] = 'short'
+        elif video_type == "Long Video Channel":
+            search_params['videoDuration'] = 'long'
+            
         try:
             response = requests.get(YOUTUBE_SEARCH_URL, params=search_params)
             if response.status_code == 200:
@@ -64,21 +71,20 @@ def find_viral_new_channels(api_key, niche_ideas_list):
                             views = int(stats.get("viewCount", 0))
                             video_count = int(stats.get("videoCount", 0))
 
-                            # Virality criteria
+                            # Virality criteria (Average views check is REMOVED)
                             if subs > 1000 and views > 50000 and 5 < video_count < 100:
                                 avg_views = views / video_count if video_count > 0 else 0
-                                if avg_views > 2000:
-                                    viral_channels.append({
-                                        "Channel Name": channel["snippet"]["title"],
-                                        "URL": f"https://www.youtube.com/channel/{channel['id']}",
-                                        "Subscribers": subs,
-                                        "Total Views": views,
-                                        "Video Count": video_count,
-                                        "Creation Date": published_date.strftime("%Y-%m-%d"),
-                                        "Avg Views/Video": int(avg_views),
-                                        "Found Via Niche": niche # Link the channel to the niche
-                                    })
-                                    processed_channel_ids.add(channel['id']) # Mark as processed
+                                viral_channels.append({
+                                    "Channel Name": channel["snippet"]["title"],
+                                    "URL": f"https://www.youtube.com/channel/{channel['id']}",
+                                    "Subscribers": subs,
+                                    "Total Views": views,
+                                    "Video Count": video_count,
+                                    "Creation Date": published_date.strftime("%Y-%m-%d"),
+                                    "Avg Views/Video": int(avg_views),
+                                    "Found Via Niche": niche # Link the channel to the niche
+                                })
+                                processed_channel_ids.add(channel['id']) # Mark as processed
         except requests.exceptions.RequestException:
             continue
             
@@ -181,6 +187,14 @@ with tab2:
     st.header("Niche Research Tool")
     st.info(f"{datetime.now().year} mein banaye gaye tezi se grow karne wale YouTube channels dhoondein.")
 
+    # ADDED: Radio button for video type selection
+    video_type_choice = st.radio(
+        "Aap kis tarah ke channels dhoondna chahte hain?",
+        ('Any', 'Shorts Channel', 'Long Video Channel'),
+        horizontal=True,
+        help="Shorts (1 min se kam), Long (20 min se zyada)."
+    )
+    
     # NEW: User can input their own niche ideas
     default_niches = "AI Tools Tutorials\nPersonal Finance for Gen Z\nSustainable Living Hacks\nSide Hustle Case Studies\nRetro Gaming Deep Dives"
     user_niche_input = st.text_area("Niche Ideas Yahan Daalein (har idea nayi line mein):", value=default_niches, height=150)
@@ -194,7 +208,7 @@ with tab2:
                 st.warning("Barae meharbani research ke liye kam se kam ek niche idea daalein.")
             else:
                 with st.spinner("Is mein kuch minute lag sakte hain... Niches research ki ja rahi hain..."):
-                    viral_channels_result = find_viral_new_channels(st.session_state.api_key, niche_ideas)
+                    viral_channels_result = find_viral_new_channels(st.session_state.api_key, niche_ideas, video_type_choice)
 
                 if viral_channels_result:
                     st.success(f"🎉 {len(viral_channels_result)} naye promising channels mil gaye jo {datetime.now().year} mein banaye gaye!")
