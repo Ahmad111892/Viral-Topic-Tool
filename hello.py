@@ -17,18 +17,19 @@ YOUTUBE_CHANNEL_URL = "https://www.googleapis.com/youtube/v3/channels"
 @st.cache_data(ttl=3600) # Cache the results for 1 hour to save API calls
 def find_viral_new_channels(api_key, niche_ideas_list):
     """
-    Researches a user-provided list of niches to find viral channels created in the current year.
+    Researches a user-provided list of niches to find viral channels created in the current year,
+    and tracks which niche found the channel.
     """
     viral_channels = []
     current_year = datetime.now().year
     
     progress_bar = st.progress(0)
     status_text = st.empty()
-    unique_channel_ids = set()
+    processed_channel_ids = set() # To avoid adding the same channel multiple times
 
-    # Phase 1: Collect channel IDs from video searches based on user's niche ideas
+    # Process each niche individually to link channels to the niche that found them
     for i, niche in enumerate(niche_ideas_list):
-        status_text.text(f"Phase 1/2: Researching Niche '{niche}'...")
+        status_text.text(f"Niche Research ki ja rahi hai '{niche}'... ({i + 1}/{len(niche_ideas_list)})")
         progress_bar.progress((i + 1) / len(niche_ideas_list))
         
         search_params = {
@@ -39,50 +40,45 @@ def find_viral_new_channels(api_key, niche_ideas_list):
         try:
             response = requests.get(YOUTUBE_SEARCH_URL, params=search_params)
             if response.status_code == 200:
-                for item in response.json().get("items", []):
-                    unique_channel_ids.add(item["snippet"]["channelId"])
-        except requests.exceptions.RequestException:
-            continue
-            
-    # Phase 2: Analyze collected channels
-    status_text.text("Phase 2/2: Analyzing collected channels...")
-    progress_bar.progress(0)
-    
-    all_channel_ids = list(unique_channel_ids)
-    
-    for i in range(0, len(all_channel_ids), 50):
-        # FIX: Ensure progress value does not exceed 1.0
-        progress_value = min((i + 50) / len(all_channel_ids), 1.0) if len(all_channel_ids) > 0 else 1.0
-        progress_bar.progress(progress_value)
-        
-        id_batch = all_channel_ids[i:i+50]
-        channel_params = {"part": "snippet,statistics", "id": ",".join(id_batch), "key": api_key}
-        
-        try:
-            response = requests.get(YOUTUBE_CHANNEL_URL, params=channel_params)
-            if response.status_code == 200:
-                for channel in response.json().get("items", []):
-                    published_at_str = channel["snippet"]["publishedAt"]
-                    published_date = datetime.fromisoformat(published_at_str.replace("Z", "+00:00"))
+                # Get channel IDs from the video search results for this niche
+                niche_channel_ids = {item["snippet"]["channelId"] for item in response.json().get("items", [])}
+                
+                # Filter out channels that have already been processed
+                new_channel_ids = list(niche_channel_ids - processed_channel_ids)
 
-                    if published_date.year == current_year:
-                        stats = channel.get("statistics", {})
-                        subs = int(stats.get("subscriberCount", 0))
-                        views = int(stats.get("viewCount", 0))
-                        video_count = int(stats.get("videoCount", 0))
+                if not new_channel_ids:
+                    continue
 
-                        if subs > 1000 and views > 50000 and 5 < video_count < 100:
-                            avg_views = views / video_count if video_count > 0 else 0
-                            if avg_views > 2000:
-                                viral_channels.append({
-                                    "Channel Name": channel["snippet"]["title"],
-                                    "URL": f"https://www.youtube.com/channel/{channel['id']}",
-                                    "Subscribers": subs,
-                                    "Total Views": views,
-                                    "Video Count": video_count,
-                                    "Creation Date": published_date.strftime("%Y-%m-%d"),
-                                    "Avg Views/Video": int(avg_views)
-                                })
+                # Fetch details for the new channels found
+                channel_params = {"part": "snippet,statistics", "id": ",".join(new_channel_ids), "key": api_key}
+                channel_response = requests.get(YOUTUBE_CHANNEL_URL, params=channel_params)
+                
+                if channel_response.status_code == 200:
+                    for channel in channel_response.json().get("items", []):
+                        published_at_str = channel["snippet"]["publishedAt"]
+                        published_date = datetime.fromisoformat(published_at_str.replace("Z", "+00:00"))
+
+                        if published_date.year == current_year:
+                            stats = channel.get("statistics", {})
+                            subs = int(stats.get("subscriberCount", 0))
+                            views = int(stats.get("viewCount", 0))
+                            video_count = int(stats.get("videoCount", 0))
+
+                            # Virality criteria
+                            if subs > 1000 and views > 50000 and 5 < video_count < 100:
+                                avg_views = views / video_count if video_count > 0 else 0
+                                if avg_views > 2000:
+                                    viral_channels.append({
+                                        "Channel Name": channel["snippet"]["title"],
+                                        "URL": f"https://www.youtube.com/channel/{channel['id']}",
+                                        "Subscribers": subs,
+                                        "Total Views": views,
+                                        "Video Count": video_count,
+                                        "Creation Date": published_date.strftime("%Y-%m-%d"),
+                                        "Avg Views/Video": int(avg_views),
+                                        "Found Via Niche": niche # Link the channel to the niche
+                                    })
+                                    processed_channel_ids.add(channel['id']) # Mark as processed
         except requests.exceptions.RequestException:
             continue
             
@@ -204,7 +200,13 @@ with tab2:
                     st.success(f"🎉 {len(viral_channels_result)} naye promising channels mil gaye jo {datetime.now().year} mein banaye gaye!")
                     viral_channels_result.sort(key=lambda x: x['Subscribers'], reverse=True)
                     for channel in viral_channels_result:
-                        st.markdown(f"""<div style="border: 1px solid #4CAF50; border-radius: 5px; padding: 10px; margin-bottom: 10px;"><p><strong>Channel:</strong> <a href="{channel['URL']}" target="_blank">{channel['Channel Name']}</a></p><p><strong>Banane ki Tareekh:</strong> {channel['Creation Date']}</p><p><strong>Subscribers:</strong> {channel['Subscribers']:,} | <strong>Total Views:</strong> {channel['Total Views']:,} | <strong>Avg Views/Video:</strong> {channel['Avg Views/Video']:,}</p></div>""", unsafe_allow_html=True)
+                        st.markdown(f"""
+                        <div style="border: 1px solid #4CAF50; border-radius: 5px; padding: 10px; margin-bottom: 10px;">
+                            <p><strong>Channel:</strong> <a href="{channel['URL']}" target="_blank">{channel['Channel Name']}</a></p>
+                            <p><strong>Banane ki Tareekh:</strong> {channel['Creation Date']}</p>
+                            <p><strong>Subscribers:</strong> {channel['Subscribers']:,} | <strong>Total Views:</strong> {channel['Total Views']:,} | <strong>Avg Views/Video:</strong> {channel['Avg Views/Video']:,}</p>
+                            <p><small><em>Is Niche se mila: "{channel['Found Via Niche']}"</em></small></p>
+                        </div>""", unsafe_allow_html=True)
                 else:
                     st.warning(f"{datetime.now().year} mein banaye gaye koi bhi tezi se grow karne wale channels nahi mile. Yeh API ki limitations ya research kiye gaye niches mein naye viral channels na hone ki wajah se ho sakta hai.")
 
