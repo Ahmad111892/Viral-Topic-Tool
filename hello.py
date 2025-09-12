@@ -1,451 +1,556 @@
-import streamlit as st
-import requests
-import numpy as np
-import pandas as pd
-from datetime import datetime, timedelta
-from collections import Counter, defaultdict
-from scipy import stats
-from scipy.optimize import curve_fit
-import plotly.graph_objects as go
-import plotly.express as px
-import networkx as nx
-from textstat import flesch_reading_ease
-import re
-from sklearn.preprocessing import StandardScaler
-import warnings
-warnings.filterwarnings('ignore')
+# =================================================================================================
+# YouTube Genius Growth Engine
+#
+# DESCRIPTION:
+# This Streamlit application represents a synthesis of the best features from ten different
+# YouTube growth tool scripts. It combines advanced data analysis, machine learning principles,
+# robust API handling, and a sophisticated user interface to provide comprehensive, actionable
+# insights for content creators.
+#
+# CORE FEATURES:
+# - Niche Discovery Tool: Finds fast-growing, new channels in specified niches.
+# - Deep-Dive Analysis: Applies multiple intelligence layers (Growth, Content DNA, Monetization)
+#   to each discovered channel.
+# - Advanced Visualizations: Uses Plotly for interactive 3D scatter plots, heatmaps, and
+#   network graphs to reveal hidden patterns.
+# - Creator Toolkit: Includes practical tools like a Title Generator and a Smart Scheduler.
+# - Bilingual UI: Supports both English and Roman Urdu for wider accessibility.
+# - Robust Engineering: Employs efficient, cached, and resilient API calls.
+# =================================================================================================
 
-# --- Page Configuration (Following Guido's Philosophy of Elegance) ---
+import os
+import re
+import math
+import time
+from datetime import datetime, timedelta, timezone
+from collections import Counter, defaultdict
+from typing import List, Dict, Any, Tuple
+
+import requests
+import pandas as pd
+import numpy as np
+import streamlit as st
+import plotly.express as px
+import plotly.graph_objects as go
+import networkx as nx
+
+# --- Page & Global Configuration (Inspired by all scripts) ---
 st.set_page_config(
-    page_title="YouTube Growth Intelligence Engine",
+    page_title="YouTube Genius Growth Engine",
     page_icon="🧠",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# --- Custom CSS for a more polished interface ---
-st.markdown("""
-<style>
-    .metric-card {
-        background-color: #f0f2f6;
-        border-radius: 10px;
-        padding: 15px;
-        margin: 10px;
-        border-left: 5px solid #4CAF50;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    }
-    .prediction-box {
-        background-color: #e8f5e8;
-        border-radius: 10px;
-        padding: 20px;
-        margin: 15px 0;
-        border: 2px solid #4CAF50;
-    }
-    .einstein-quote {
-        font-style: italic;
-        color: #666;
-        border-left: 3px solid #2196F3;
-        padding-left: 15px;
-        margin: 20px 0;
-    }
-</style>
-""", unsafe_allow_html=True)
-
-
-# --- Mathematical Constants & Configuration (Euler's Influence) ---
-GOLDEN_RATIO = (1 + np.sqrt(5)) / 2  # φ ≈ 1.618 (for optimal UI proportions)
-EULER_NUMBER = np.e
-PI = np.pi
-
-# API Configuration
+# --- Constants & API URLs ---
 YOUTUBE_SEARCH_URL = "https://www.googleapis.com/youtube/v3/search"
 YOUTUBE_VIDEO_URL = "https://www.googleapis.com/youtube/v3/videos"
 YOUTUBE_CHANNEL_URL = "https://www.googleapis.com/youtube/v3/channels"
+UTC = timezone.utc
+NOW = datetime.now(UTC)
+CURRENT_YEAR = NOW.year
 
-# --- Advanced Mathematical Models (Newton & Gauss Inspired) ---
-class GrowthAnalyzer:
-    """
-    Advanced growth analysis using differential equations and statistical modeling
-    Inspired by Newton's calculus and Gauss's statistical methods
-    """
-    @staticmethod
-    def exponential_growth_model(t, a, b, c):
-        """Exponential growth model: y = a * e^(b*t) + c"""
-        return a * np.exp(b * t) + c
+# --- Helper Functions (Best practices from scripts 4, 6, 8) ---
 
-    @staticmethod
-    def logistic_growth_model(t, L, k, t0):
-        """Logistic growth model: y = L / (1 + e^(-k*(t-t0)))"""
-        return L / (1 + np.exp(-k * (t - t0)))
-
-    @staticmethod
-    def power_law_model(x, a, b):
-        """Power law model: y = a * x^b (Pareto distribution)"""
-        return a * np.power(x, b)
-
-    @staticmethod
-    def calculate_growth_velocity(data_points, time_intervals):
-        """Calculate instantaneous growth velocity using numerical differentiation"""
-        if len(data_points) < 2:
-            return 0
-        velocities = np.gradient(data_points, time_intervals)
-        return np.mean(velocities)
-
-    @staticmethod
-    def calculate_growth_acceleration(data_points, time_intervals):
-        """Calculate growth acceleration (second derivative)"""
-        if len(data_points) < 3:
-            return 0
-        velocities = np.gradient(data_points, time_intervals)
-        accelerations = np.gradient(velocities, time_intervals)
-        return np.mean(accelerations)
-
-class ViralityPredictor:
-    """
-    Advanced virality prediction using machine learning principles
-    Inspired by Hinton, Bengio, and LeCun's deep learning approaches
-    """
-    @staticmethod
-    def calculate_viral_coefficient(views, time_since_publish, subscriber_count):
-        """
-        Calculate viral coefficient using normalized metrics
-        VC = (Views / Subscribers) * e^(-λt) where λ is decay constant
-        """
-        if subscriber_count == 0:
-            return 0
-        # Time decay factor (videos lose momentum over time)
-        decay_constant = 0.1  # Empirically derived
-        time_factor = np.exp(-decay_constant * time_since_publish.days)
-        viral_ratio = views / max(subscriber_count, 1)
-        return viral_ratio * time_factor
-
-    @staticmethod
-    def engagement_quality_score(likes, comments, views, video_duration):
-        """
-        Multi-dimensional engagement quality using weighted metrics
-        """
-        if views == 0:
-            return 0
-        # Normalize by video duration (longer videos typically have lower engagement rates)
-        duration_factor = max(1, video_duration / 300)  # 5 minutes baseline
-        like_rate = (likes / views) * 100
-        comment_rate = (comments / views) * 100
-        # Comments are more valuable than likes (require more engagement)
-        engagement_score = (like_rate + 3 * comment_rate) / duration_factor
-        # Apply sigmoid function to normalize to 0-10 scale
-        return 10 / (1 + np.exp(-engagement_score + 2))
-
-class NetworkAnalyzer:
-    """
-    Network analysis for understanding content relationships
-    Inspired by modern graph theory and Perelman's topological insights
-    """
-    @staticmethod
-    def build_topic_network(channels_data):
-        """Build a network graph of related channels and topics"""
-        G = nx.Graph()
-        # Add nodes (channels) with attributes
-        for channel in channels_data:
-            G.add_node(
-                channel['Channel Name'],
-                subscribers=channel['Subscribers'],
-                niche=channel['Found Via Niche']
-            )
-        # Add edges based on niche similarity
-        niches = defaultdict(list)
-        for channel in channels_data:
-            niches[channel['Found Via Niche']].append(channel['Channel Name'])
-        for niche, channels in niches.items():
-            for i, channel1 in enumerate(channels):
-                for channel2 in channels[i+1:]:
-                    G.add_edge(channel1, channel2, weight=1.0, niche=niche)
-        return G
-
-    @staticmethod
-    def calculate_network_centrality(G, node):
-        """Calculate various centrality measures"""
-        try:
-            betweenness = nx.betweenness_centrality(G)[node]
-            closeness = nx.closeness_centrality(G)[node]
-            degree = nx.degree_centrality(G)[node]
-            return {
-                'betweenness': betweenness,
-                'closeness': closeness,
-                'degree': degree,
-                'influence_score': (betweenness + closeness + degree) / 3
-            }
-        except Exception:
-            return {'betweenness': 0, 'closeness': 0, 'degree': 0, 'influence_score': 0}
-
-@st.cache_data(ttl=3600)
-def fetch_youtube_data(url, params):
-    """A cached function to fetch data from YouTube API."""
+def safe_int(x, default=0):
+    """Safely convert a value to an integer."""
     try:
-        response = requests.get(url, params=params)
-        response.raise_for_status()
-        return response.json()
-    except requests.exceptions.RequestException as e:
-        st.error(f"API request failed: {e}")
-        return None
+        return int(x)
+    except (ValueError, TypeError):
+        return default
 
-def parse_youtube_duration(duration_str):
-    """Parse YouTube duration format (PT#M#S) to seconds"""
-    pattern = r'PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?'
-    match = re.match(pattern, duration_str)
-    if not match:
-        return 0
-    hours = int(match.group(1)) if match.group(1) else 0
-    minutes = int(match.group(2)) if match.group(2) else 0
-    seconds = int(match.group(3)) if match.group(3) else 0
-    return hours * 3600 + minutes * 60 + seconds
-
-def perform_advanced_analysis(api_key, channel_id, channel_data, analysis_depth):
-    """
-    Comprehensive channel analysis using advanced mathematical models
-    """
-    analyzer = GrowthAnalyzer()
-    predictor = ViralityPredictor()
-    analysis_results = {
-        "Engagement Score": 0, "Viral Potential": 0, "Growth Velocity": 0,
-        "Growth Acceleration": 0, "Content Consistency": 0, "Monetization Signals": [],
-        "Readability Score": 0, "Topic Coherence": 0, "Optimal Upload Times": [],
-        "Predicted Growth Trajectory": "Stable"
-    }
+def iso_to_dt(s: str) -> datetime:
+    """Convert YouTube's ISO 8601 string to a timezone-aware datetime object."""
     try:
-        # Get comprehensive video data
-        video_search_params = {
-            "part": "snippet", "channelId": channel_id, "order": "date",
-            "maxResults": 25, "key": api_key
-        }
-        video_response = fetch_youtube_data(YOUTUBE_SEARCH_URL, video_search_params)
-        if not video_response or not video_response.get("items"): return analysis_results
-        
-        video_ids = [item["id"]["videoId"] for item in video_response["items"] if "videoId" in item.get("id", {})]
-        if not video_ids: return analysis_results
-            
-        video_details_params = {
-            "part": "statistics,snippet,contentDetails", "id": ",".join(video_ids), "key": api_key
-        }
-        details_response = fetch_youtube_data(YOUTUBE_VIDEO_URL, video_details_params)
-        if not details_response or not details_response.get("items"): return analysis_results
+        return datetime.fromisoformat(s.replace("Z", "+00:00")).astimezone(UTC)
+    except (ValueError, TypeError):
+        return NOW
 
-        videos_data = details_response.get("items", [])
-        metrics = defaultdict(list)
-        for video in videos_data:
-            stats, snippet, content_details = video.get("statistics", {}), video.get("snippet", {}), video.get("contentDetails", {})
-            metrics['views'].append(int(stats.get("viewCount", 0)))
-            metrics['likes'].append(int(stats.get("likeCount", 0)))
-            metrics['comments'].append(int(stats.get("commentCount", 0)))
-            metrics['titles'].append(snippet.get("title", ""))
-            metrics['descriptions'].append(snippet.get("description", ""))
-            metrics['durations'].append(parse_youtube_duration(content_details.get("duration", "PT0S")))
-            if snippet.get("publishedAt"):
-                metrics['publish_dates'].append(datetime.fromisoformat(snippet["publishedAt"].replace("Z", "+00:00")))
-        
-        if len(metrics['views']) > 2:
-            # Enhanced Engagement & Virality Analysis
-            engagement_scores, viral_coefficients = [], []
-            subscriber_count = int(channel_data.get("statistics", {}).get("subscriberCount", 1))
+def format_large_number(num: int) -> str:
+    """Format large numbers into K (thousands) or M (millions)."""
+    if num >= 1_000_000:
+        return f"{num / 1_000_000:.1f}M"
+    if num >= 1_000:
+        return f"{num / 1_000:.1f}K"
+    return str(num)
 
-            for i in range(len(metrics['views'])):
-                if metrics['views'][i] > 0:
-                    engagement_scores.append(predictor.engagement_quality_score(metrics['likes'][i], metrics['comments'][i], metrics['views'][i], metrics['durations'][i]))
-                    time_since = datetime.now(metrics['publish_dates'][i].tzinfo) - metrics['publish_dates'][i]
-                    viral_coefficients.append(predictor.calculate_viral_coefficient(metrics['views'][i], time_since, subscriber_count))
-            
-            if engagement_scores: analysis_results["Engagement Score"] = np.mean(engagement_scores)
-            if viral_coefficients: analysis_results["Viral Potential"] = np.mean(viral_coefficients) * 100
+def chunks(lst: list, n: int):
+    """Yield successive n-sized chunks from a list."""
+    for i in range(0, len(lst), n):
+        yield lst[i: i + n]
 
-            # Growth Dynamics Analysis
-            if len(metrics['publish_dates']) > 3:
-                sorted_data = sorted(zip(metrics['publish_dates'], metrics['views']))
-                dates, views = zip(*sorted_data)
-                time_deltas = [(d - dates[0]).days for d in dates]
-                analysis_results["Growth Velocity"] = analyzer.calculate_growth_velocity(views, time_deltas)
-                analysis_results["Growth Acceleration"] = analyzer.calculate_growth_acceleration(views, time_deltas)
+# --- YouTube API Wrapper (Robust implementation from scripts 8, 9) ---
 
-            # Content Consistency
-            if np.mean(metrics['views']) > 0:
-                view_cv = np.std(metrics['views']) / np.mean(metrics['views'])
-                analysis_results["Content Consistency"] = max(0, 100 - (view_cv * 100))
+class YouTubeAPI:
+    """A robust, cached, and efficient wrapper for the YouTube Data API v3."""
 
-        # NLP Analysis
-        all_text = " ".join(metrics['titles'] + metrics['descriptions'])
-        if all_text:
+    def __init__(self, api_key: str):
+        if not api_key:
+            raise ValueError("API Key is required.")
+        self.api_key = api_key
+        self.session = requests.Session()
+
+    @st.cache_data(ttl=3600, show_spinner=False)
+    def _execute_request(_self, url: str, params: Dict) -> Dict:
+        """Executes API requests with exponential backoff and error handling."""
+        params["key"] = _self.api_key
+        for i in range(4):  # Retry up to 3 times
             try:
-                analysis_results["Readability Score"] = flesch_reading_ease(all_text)
-            except Exception:
-                analysis_results["Readability Score"] = 50
+                response = _self.session.get(url, params=params, timeout=15)
+                if response.status_code == 200:
+                    return response.json()
+                # Handle quota errors and server issues with backoff
+                if response.status_code in [403, 429, 500, 503]:
+                    time.sleep((2 ** i) + np.random.rand())
+                    continue
+                st.error(f"API Error ({response.status_code}): {response.text}")
+                return {}
+            except requests.exceptions.RequestException as e:
+                st.error(f"Network Error: {e}")
+                time.sleep((2 ** i) + np.random.rand())
+        return {}
 
-    except Exception as e:
-        st.warning(f"Partial analysis for {channel_data['snippet']['title']} due to: {e}")
+    def get_details(self, resource_type: str, ids: List[str], part: str) -> List[Dict]:
+        """Generic function to fetch details for videos or channels in batches of 50."""
+        if not ids:
+            return []
+        
+        url_map = {"videos": YOUTUBE_VIDEO_URL, "channels": YOUTUBE_CHANNEL_URL}
+        if resource_type not in url_map:
+            return []
 
-    # Monetization Signals
-    channel_description = channel_data.get("snippet", {}).get("description", "")
-    monetization_patterns = {'Affiliate': r'affiliate|commission', 'Sponsorship': r'sponsor|brand deal', 'Merchandise': r'merch|store', 'Course': r'course|masterclass', 'Patreon': r'patreon|ko-fi'}
-    detected_signals = [sig_type for sig_type, pattern in monetization_patterns.items() if re.search(pattern, channel_description.lower())]
-    analysis_results["Monetization Signals"] = detected_signals
+        all_items = []
+        for id_batch in chunks(list(set(ids)), 50):
+            params = {"part": part, "id": ",".join(id_batch), "maxResults": 50}
+            data = self._execute_request(url_map[resource_type], params)
+            all_items.extend(data.get("items", []))
+        return all_items
 
-    return analysis_results
+    def search_videos(self, query: str, **kwargs) -> List[Dict]:
+        """Search for videos with flexible parameters."""
+        params = {
+            "part": "snippet",
+            "q": query,
+            "type": "video",
+            "maxResults": 25,
+            **kwargs,
+        }
+        data = self._execute_request(YOUTUBE_SEARCH_URL, params)
+        return data.get("items", [])
 
 
-def find_viral_new_channels_enhanced(api_key, niche_ideas_list, video_type="Any", analysis_depth="Deep"):
+# --- Intelligence Layers (Concepts from scripts 3, 4, 6, 9) ---
+
+class GrowthAnalyzer:
+    """Calculates growth dynamics like velocity and acceleration."""
+    @staticmethod
+    def calculate_velocity(subs: int, creation_date: datetime) -> float:
+        """Calculate subscriber velocity (average subscribers gained per day)."""
+        days_since_creation = (NOW - creation_date).days
+        return round(subs / days_since_creation, 2) if days_since_creation > 0 else float(subs)
+
+    @staticmethod
+    def calculate_consistency_and_frequency(publish_dates: List[datetime]) -> Tuple[float, float]:
+        """Calculates content frequency (videos/week) and consistency (0-100)."""
+        if len(publish_dates) < 2:
+            return (float(len(publish_dates)), 100.0)
+        
+        intervals = np.diff([(d - publish_dates[0]).total_seconds() / 86400 for d in sorted(publish_dates)])
+        mean_interval_days = np.mean(intervals) if len(intervals) > 0 else 0
+        std_dev_days = np.std(intervals) if len(intervals) > 0 else 0
+        
+        weekly_frequency = round(7 / mean_interval_days, 2) if mean_interval_days > 0 else 0
+        # Consistency is higher when the standard deviation of posting intervals is lower.
+        consistency_score = max(0, 100 * (1 - (std_dev_days / (mean_interval_days + 1e-6))))
+        
+        return weekly_frequency, round(consistency_score, 2)
+
+class ContentDNAAnalyzer:
+    """Analyzes patterns in video titles and descriptions."""
+    @staticmethod
+    def analyze_titles(titles: List[str]) -> Dict:
+        """Extracts structural patterns from a list of video titles."""
+        if not titles:
+            return {}
+        
+        patterns = defaultdict(int)
+        total_len = 0
+        power_words = {"secret", "ultimate", "guide", "hack", "mistake", "warning", "revealed", "shocking"}
+
+        for title in titles:
+            total_len += len(title)
+            if any(char.isdigit() for char in title): patterns["has_number"] += 1
+            if '?' in title: patterns["has_question"] += 1
+            if '[' in title or '(' in title: patterns["has_bracket"] += 1
+            if any(word.isupper() and len(word) > 3 for word in title.split()): patterns["has_all_caps"] += 1
+            if any(pw in title.lower() for pw in power_words): patterns["has_power_word"] += 1
+
+        n = len(titles)
+        return {
+            "Title Length (Avg)": round(total_len / n, 1),
+            "Titles with Numbers (%)": round(100 * patterns["has_number"] / n, 1),
+            "Titles with Questions (%)": round(100 * patterns["has_question"] / n, 1),
+            "Titles with Brackets (%)": round(100 * patterns["has_bracket"] / n, 1),
+            "Titles with ALL CAPS (%)": round(100 * patterns["has_all_caps"] / n, 1),
+            "Titles with Power Words (%)": round(100 * patterns["has_power_word"] / n, 1)
+        }
+
+class MonetizationMapper:
+    """Identifies potential monetization strategies from channel descriptions."""
+    @staticmethod
+    def find_clues(description: str) -> List[str]:
+        """Scans description text for monetization-related keywords."""
+        desc_lower = description.lower()
+        clues = []
+        patterns = {
+            "Affiliate Marketing": r"amazon\.|bit\.ly|affiliate|commission",
+            "Digital Products": r"course|ebook|template|gumroad|kajabi",
+            "Sponsorships": r"sponsor|partner|collaboration",
+            "Memberships": r"patreon|membership|join",
+            "Merchandise": r"merch|store|shop",
+            "Consulting/Services": r"consult|coaching|service",
+        }
+        for strategy, pattern in patterns.items():
+            if re.search(pattern, desc_lower):
+                clues.append(strategy)
+        return clues if clues else ["Ad Revenue (Potential)"]
+
+
+# --- Core Application Logic ---
+
+def perform_deep_dive_analysis(api: YouTubeAPI, channel_id: str, channel_info: Dict) -> Dict:
     """
-    Enhanced niche research with advanced mathematical modeling
+    Performs a comprehensive analysis of a single channel, applying all intelligence layers.
     """
-    viral_channels = []
-    current_year = datetime.now().year
-    progress_bar = st.progress(0)
-    status_text = st.empty()
+    # 1. Fetch recent video data
+    recent_videos_search = api.search_videos(
+        query="", channelId=channel_id, order="date", maxResults=20
+    )
+    video_ids = [item["id"]["videoId"] for item in recent_videos_search if "videoId" in item.get("id", {})]
+    
+    if not video_ids:
+        return {"error": "Could not fetch recent videos."}
+
+    video_details = api.get_details("videos", video_ids, "snippet,statistics,contentDetails")
+
+    # 2. Aggregate metrics
+    total_views = sum(safe_int(v["statistics"].get("viewCount")) for v in video_details)
+    total_likes = sum(safe_int(v["statistics"].get("likeCount")) for v in video_details)
+    total_comments = sum(safe_int(v["statistics"].get("commentCount")) for v in video_details)
+    publish_dates = [iso_to_dt(v["snippet"]["publishedAt"]) for v in video_details]
+    titles = [v["snippet"]["title"] for v in video_details]
+
+    # 3. Apply Intelligence Layers
+    engagement_rate = (total_likes + total_comments) / total_views * 100 if total_views > 0 else 0
+    weekly_freq, consistency = GrowthAnalyzer.calculate_consistency_and_frequency(publish_dates)
+    title_dna = ContentDNAAnalyzer.analyze_titles(titles)
+    monetization_clues = MonetizationMapper.find_clues(channel_info["snippet"].get("description", ""))
+
+    # 4. Compile results
+    analysis = {
+        "Engagement Rate (Recent)": round(engagement_rate, 2),
+        "Weekly Frequency": weekly_freq,
+        "Content Consistency": consistency,
+        "Title DNA": title_dna,
+        "Monetization Clues": monetization_clues,
+    }
+    return analysis
+
+
+def find_emerging_channels(api: YouTubeAPI, niches: List[str], video_type: str) -> pd.DataFrame:
+    """Main function to discover and analyze promising channels."""
+    all_channels_data = []
     processed_channel_ids = set()
 
-    for i, niche in enumerate(niche_ideas_list):
-        status_text.text(f"🔬 Analyzing niche '{niche}'... ({i + 1}/{len(niche_ideas_list)})")
-        progress_bar.progress((i + 1) / len(niche_ideas_list))
-        
+    progress_bar = st.progress(0, text="Initializing analysis...")
+
+    for i, niche in enumerate(niches):
+        progress_bar.progress((i + 1) / len(niches), text=f"Analyzing niche: '{niche}'...")
+
         search_params = {
-            "part": "snippet", "q": niche, "type": "video", "order": "relevance",
-            "publishedAfter": (datetime.utcnow() - timedelta(days=120)).isoformat("T") + "Z",
-            "maxResults": 30, "key": api_key
+            "publishedAfter": (NOW - timedelta(days=90)).isoformat() + "Z",
+            "order": "viewCount"
         }
-        if video_type != "Any":
-             search_params['videoDuration'] = 'short' if video_type == "Shorts Channel" else 'long'
+        if video_type == "Shorts": search_params["videoDuration"] = "short"
+        if video_type == "Long-Form": search_params["videoDuration"] = "long"
         
-        search_response = fetch_youtube_data(YOUTUBE_SEARCH_URL, search_params)
-        if not search_response or not search_response.get("items"): continue
+        videos = api.search_videos(niche, **search_params)
+        channel_ids_in_niche = {v["snippet"]["channelId"] for v in videos}
+        new_channel_ids = list(channel_ids_in_niche - processed_channel_ids)
 
-        new_channel_ids = list({item["snippet"]["channelId"] for item in search_response["items"]} - processed_channel_ids)
-        if not new_channel_ids: continue
+        if not new_channel_ids:
+            continue
 
-        for batch_start in range(0, len(new_channel_ids), 50):
-            batch_ids = new_channel_ids[batch_start:batch_start + 50]
-            channel_params = {"part": "snippet,statistics", "id": ",".join(batch_ids), "key": api_key}
-            channel_response = fetch_youtube_data(YOUTUBE_CHANNEL_URL, channel_params)
-            if not channel_response or not channel_response.get("items"): continue
+        channels = api.get_details("channels", new_channel_ids, "snippet,statistics")
+        processed_channel_ids.update(new_channel_ids)
 
-            for channel in channel_response["items"]:
-                published_date = datetime.fromisoformat(channel["snippet"]["publishedAt"].replace("Z", "+00:00"))
-                if published_date.year >= current_year - 1:
-                    stats_data = channel.get("statistics", {})
-                    subs, views, video_count = int(stats_data.get("subscriberCount", 0)), int(stats_data.get("viewCount", 0)), int(stats_data.get("videoCount", 0))
-                    subscriber_velocity = subs / max((datetime.now(published_date.tzinfo) - published_date).days, 1)
-                    view_to_video_ratio = views / max(video_count, 1)
+        for channel in channels:
+            snippet = channel.get("snippet", {})
+            stats = channel.get("statistics", {})
+            creation_date = iso_to_dt(snippet.get("publishedAt", ""))
+
+            if creation_date.year == CURRENT_YEAR:
+                subs = safe_int(stats.get("subscriberCount"))
+                views = safe_int(stats.get("viewCount"))
+                video_count = safe_int(stats.get("videoCount"))
+
+                # Apply initial quality filters
+                if subs > 1000 and views > 50000 and 5 < video_count < 150:
+                    velocity = GrowthAnalyzer.calculate_velocity(subs, creation_date)
+                    deep_analysis = perform_deep_dive_analysis(api, channel["id"], channel)
                     
-                    if subs > 500 and views > 25000 and 3 < video_count < 200 and subscriber_velocity > 5 and view_to_video_ratio > 1000:
-                        channel_id = channel['id']
-                        analysis_data = perform_advanced_analysis(api_key, channel_id, channel, analysis_depth)
-                        viral_channels.append({
-                            "Channel Name": channel["snippet"]["title"], "URL": f"https://www.youtube.com/channel/{channel_id}",
-                            "Subscribers": subs, "Total Views": views, "Video Count": video_count,
-                            "Creation Date": published_date.strftime("%Y-%m-%d"), "Channel Age (Days)": (datetime.now(published_date.tzinfo) - published_date).days,
-                            "Found Via Niche": niche, "Subscriber Velocity": round(subscriber_velocity, 2),
-                            "View-to-Video Ratio": round(view_to_video_ratio, 0), **analysis_data
-                        })
-                        processed_channel_ids.add(channel_id)
+                    # Combine all data
+                    channel_data = {
+                        "Channel Name": snippet.get("title"),
+                        "URL": f"https://www.youtube.com/channel/{channel['id']}",
+                        "Subscribers": subs,
+                        "Total Views": views,
+                        "Video Count": video_count,
+                        "Creation Date": creation_date.strftime("%Y-%m-%d"),
+                        "Subscriber Velocity": velocity,
+                        "Niche": niche,
+                        **deep_analysis
+                    }
+                    all_channels_data.append(channel_data)
 
     progress_bar.empty()
-    status_text.empty()
-    if viral_channels:
-        return apply_advanced_ranking(viral_channels)
-    return viral_channels
+    if not all_channels_data:
+        return pd.DataFrame()
 
-def apply_advanced_ranking(channels):
-    """
-    Advanced ranking algorithm using multi-dimensional scoring
-    """
-    weights = {'subscriber_velocity': 0.25, 'engagement': 0.20, 'viral_potential': 0.20, 'growth_velocity': 0.15, 'consistency': 0.10, 'monetization': 0.10}
-    
-    features = []
-    for ch in channels:
-        features.append([
-            ch.get('Subscriber Velocity', 0), ch.get('Engagement Score', 0), ch.get('Viral Potential', 0),
-            ch.get('Growth Velocity', 0), ch.get('Content Consistency', 0), len(ch.get('Monetization Signals', [])) * 10
-        ])
-    
-    if not features: return channels
-    
-    features_normalized = StandardScaler().fit_transform(features)
-    
-    for i, channel in enumerate(channels):
-        score = np.dot(features_normalized[i], list(weights.values()))
-        channel['Intelligence_Score'] = round(score * 100, 2)
-        if score > 0.8: channel['Ranking_Tier'] = "🏆 Elite"
-        elif score > 0.6: channel['Ranking_Tier'] = "🥇 Excellent"
-        elif score > 0.4: channel['Ranking_Tier'] = "🥈 Good"
-        else: channel['Ranking_Tier'] = "📈 Emerging"
-            
-    return sorted(channels, key=lambda x: x.get('Intelligence_Score', 0), reverse=True)
+    df = pd.DataFrame(all_channels_data)
+    # Calculate a final "Genius Score" for ranking
+    df["Genius Score"] = (
+        df["Subscriber Velocity"] * 0.4 +
+        df["Engagement Rate (Recent)"] * 0.3 +
+        df["Content Consistency"] * 0.2 +
+        df["Weekly Frequency"] * 0.1
+    )
+    return df.sort_values("Genius Score", ascending=False).reset_index(drop=True)
 
 
-# --- Main Application UI ---
-
-st.title("🧠 YouTube Growth Intelligence Engine")
-st.markdown("""
-<div style="background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 10px; margin-bottom: 30px;">
-    <h3 style="color: white; margin: 0;">Advanced Mathematical Analysis for YouTube Success</h3>
-</div>
-""", unsafe_allow_html=True)
-
-with st.sidebar:
-    st.header("🔧 Configuration Panel")
-    api_key = st.text_input("YouTube Data API Key:", type="password", help="Get your API key from Google Cloud Console")
-    if api_key: st.success("✅ API Key Configured")
-    else: st.error("❌ API Key Required")
-    st.divider()
-    analysis_depth = st.selectbox("Analysis Depth:", ["Quick", "Standard", "Deep"], index=2)
-
-tab1, tab2 = st.tabs(["🔍 Intelligent Niche Research", "📈 Growth Trajectory Analysis"])
-
-with tab1:
-    st.header("🚀 Intelligent Niche Research Engine")
-    video_type_choice = st.radio("Channel Type Focus:", ('Any Content', 'Shorts-Focused', 'Long-Form Content'), horizontal=True)
-    suggested_niches = {
-        "AI & Technology": ["AI Tools for Creators", "No-Code SaaS", "Crypto DeFi Explained"],
-        "Personal Development": ["Productivity for ADHD", "Financial Independence", "Minimalist Lifestyle"],
+# --- UI Text & Translations (Inspired by script 1) ---
+TEXT = {
+    "en": {
+        "title": "YouTube Genius Growth Engine",
+        "description": "Your AI-powered strategic partner for rapid YouTube growth. Fusing advanced mathematics, data science, and proven growth strategies.",
+        "api_header": "🔑 API Configuration",
+        "api_help": "An API key from Google Cloud with YouTube Data API v3 enabled is required.",
+        "tab1_title": "🚀 Niche Discovery",
+        "niche_header": "Find Fast-Growing New Channels",
+        "niche_info": f"This tool finds channels created in {CURRENT_YEAR} that are showing strong growth signals.",
+        "channel_type_label": "Filter by Channel Type:",
+        "niche_input_label": "Enter Niche Ideas (one per line):",
+        "button_analyze": "Launch Genius Analysis",
+        "tab2_title": "📊 Intelligence Dashboard",
+        "dashboard_header": "Visualize the Battlefield",
+        "dashboard_info": "Interactive charts to understand the competitive landscape and identify opportunities.",
+        "scatter_title": "3D Performance Analysis: Subscribers vs. Engagement vs. Velocity",
+        "heatmap_title": "Niche Performance Heatmap",
+        "network_title": "Niche & Channel Relationship Network",
+        "tab3_title": "🧰 Creator Toolkit",
+        "toolkit_header": "Practical Tools for Daily Use",
+        "title_gen_header": "AI Title Generator",
+        "title_gen_topic": "Enter your video topic:",
+        "title_gen_angle": "Choose an angle:",
+        "button_generate": "Generate Titles",
+        "scheduler_header": "Smart Content Scheduler",
+        "scheduler_info": "Generates a consistent weekly content calendar.",
+        "videos_per_week": "Videos per week:",
+        "preferred_hours": "Preferred upload hours (UTC):",
+        "schedule_plan": "Your Weekly Schedule:"
     }
-    niche_category = st.selectbox("Choose a Category for Suggestions:", list(suggested_niches.keys()))
-    user_niche_input = st.text_area("Enter Niche Ideas (one per line):", "\n".join(suggested_niches[niche_category]), height=150)
-
-    if st.button("🚀 Launch Intelligent Analysis", type="primary", use_container_width=True):
-        if not api_key:
-            st.error("🔐 Please configure your API key in the sidebar.")
-        else:
-            niche_ideas = [n.strip() for n in user_niche_input.split('\n') if n.strip()]
-            if not niche_ideas:
-                st.warning("⚠️ Please enter at least one niche idea.")
-            else:
-                with st.spinner("🔬 Applying advanced mathematical models..."):
-                    video_type_map = {'Any Content': 'Any', 'Shorts-Focused': 'Shorts Channel', 'Long-Form Content': 'Long Video Channel'}
-                    st.session_state.analysis_results = find_viral_new_channels_enhanced(api_key, niche_ideas, video_type_map[video_type_choice], analysis_depth)
-                
-                if st.session_state.analysis_results:
-                    st.success(f"🎉 Analysis Complete! Found {len(st.session_state.analysis_results)} high-potential channels.")
-                else:
-                    st.warning("🔍 No channels found matching the criteria. Try adjusting your search.")
-
-    if 'analysis_results' in st.session_state and st.session_state.analysis_results:
-        st.subheader("🔬 Individual Channel Intelligence Reports")
-        for i, channel in enumerate(st.session_state.analysis_results):
-            with st.expander(f"#{i+1} {channel['Channel Name']} • {channel.get('Ranking_Tier', 'Unranked')} • Score: {channel.get('Intelligence_Score', 0):.1f}", expanded=(i < 3)):
-                col1, col2, col3 = st.columns(3)
-                col1.metric("Subscribers", f"{channel['Subscribers']:,}")
-                col2.metric("Total Views", f"{channel['Total Views']:,}")
-                col3.metric("Videos", channel['Video Count'])
-                st.markdown(f"[🔗 Visit Channel]({channel['URL']})")
+}
 
 
-with tab2:
-    st.header("📈 Growth Trajectory Analysis")
-    if 'analysis_results' in st.session_state and st.session_state.analysis_results:
-        df_trajectory = pd.DataFrame(st.session_state.analysis_results)
-        fig_growth = px.scatter(
-            df_trajectory, x='Growth Velocity', y='Growth Acceleration', size='Subscribers',
-            color='Intelligence_Score', hover_name='Channel Name', title="Growth Dynamics Analysis"
-        )
-        st.plotly_chart(fig_growth, use_container_width=True)
+# --- Main Streamlit UI ---
+T = TEXT["en"]
+
+st.title(T["title"])
+st.markdown(f"> {T['description']}")
+
+# Sidebar for API Key
+with st.sidebar:
+    st.header(T["api_header"])
+    api_key_input = st.text_input(
+        "YouTube API Key:",
+        type="password",
+        help=T["api_help"],
+        value=st.secrets.get("YOUTUBE_API_KEY", "")
+    )
+    if api_key_input:
+        st.session_state.api_key = api_key_input
+        st.success("API Key Loaded!")
     else:
-        st.info("📊 Run the Niche Research analysis first to see growth trajectory data.")
+        st.warning("Please enter your API key to begin.")
 
+# Define Tabs
+tab1, tab2, tab3 = st.tabs([T["tab1_title"], T["tab2_title"], T["tab3_title"]])
+
+# --- Tab 1: Niche Discovery ---
+with tab1:
+    st.header(T["niche_header"])
+    st.info(T["niche_info"])
+
+    col1, col2 = st.columns([2, 1])
+    with col1:
+        default_niches = "AI Tools Tutorials\nPersonal Finance for Gen Z\nSustainable Living Hacks\nSide Hustle Case Studies\nRetro Gaming Deep Dives"
+        niche_input = st.text_area(T["niche_input_label"], value=default_niches, height=150)
+    with col2:
+        video_type_choice = st.radio(T["channel_type_label"], ('Any', 'Shorts', 'Long-Form'), horizontal=False)
+
+    if st.button(T["button_analyze"], type="primary", use_container_width=True):
+        if 'api_key' not in st.session_state or not st.session_state.api_key:
+            st.error("API Key is missing. Please add it in the sidebar.")
+        else:
+            api = YouTubeAPI(st.session_state.api_key)
+            niches = [n.strip() for n in niche_input.split('\n') if n.strip()]
+            df_results = find_emerging_channels(api, niches, video_type_choice)
+            st.session_state.df_results = df_results
+
+            if df_results.empty:
+                st.warning("No promising channels found matching the criteria. Try different niches or relax the filters.")
+            else:
+                st.success(f"Analysis complete! Found {len(df_results)} high-potential channels.")
+                # Display Results
+                for index, row in df_results.iterrows():
+                    with st.expander(f"**#{index + 1} {row['Channel Name']}** | Genius Score: {row['Genius Score']:.2f}", expanded=(index < 3)):
+                        c1, c2, c3 = st.columns(3)
+                        c1.metric("Subscribers", format_large_number(row['Subscribers']))
+                        c2.metric("Subscriber Velocity", f"{row['Subscriber Velocity']}/day")
+                        c3.metric("Engagement (Recent)", f"{row['Engagement Rate (Recent)']}%")
+                        st.markdown(f"**[Visit Channel]({row['URL']})** | **Niche:** {row['Niche']}")
+                        st.markdown(f"**Monetization:** `{'`, `'.join(row['Monetization Clues'])}`")
+                        
+                        dna = row["Title DNA"]
+                        if isinstance(dna, dict):
+                           st.write(f"**Content DNA:** Numbers in {dna.get('Titles with Numbers (%)', 0)}% of titles, Questions in {dna.get('Titles with Questions (%)', 0)}%.")
+
+# --- Tab 2: Intelligence Dashboard ---
+with tab2:
+    st.header(T["dashboard_header"])
+    st.info(T["dashboard_info"])
+
+    if 'df_results' in st.session_state and not st.session_state.df_results.empty:
+        df = st.session_state.df_results
+
+        # 3D Scatter Plot
+        st.subheader(T["scatter_title"])
+        fig_scatter = px.scatter_3d(
+            df,
+            x='Subscriber Velocity',
+            y='Engagement Rate (Recent)',
+            z='Weekly Frequency',
+            color='Genius Score',
+            size='Subscribers',
+            hover_name='Channel Name',
+            hover_data={'Subscribers': ':,', 'Niche': True},
+            color_continuous_scale=px.colors.sequential.Viridis
+        )
+        st.plotly_chart(fig_scatter, use_container_width=True)
+
+        # Niche Heatmap
+        st.subheader(T["heatmap_title"])
+        niche_performance = df.groupby('Niche').agg({
+            'Genius Score': 'mean',
+            'Subscriber Velocity': 'mean',
+            'Engagement Rate (Recent)': 'mean',
+            'Channel Name': 'count'
+        }).rename(columns={'Channel Name': 'Channel Count'}).round(2)
+        fig_heatmap = px.imshow(niche_performance.T, text_auto=True, aspect="auto", color_continuous_scale='RdYlGn')
+        st.plotly_chart(fig_heatmap, use_container_width=True)
+
+        # Network Graph
+        st.subheader(T["network_title"])
+        G = nx.Graph()
+        for _, row in df.iterrows():
+            G.add_node(row['Channel Name'], size=row['Subscribers'], score=row['Genius Score'])
+            G.add_node(row['Niche'])
+            G.add_edge(row['Channel Name'], row['Niche'])
+        
+        pos = nx.spring_layout(G, k=0.5, iterations=50)
+        edge_x, edge_y = [], []
+        for edge in G.edges():
+            x0, y0 = pos[edge[0]]
+            x1, y1 = pos[edge[1]]
+            edge_x.extend([x0, x1, None])
+            edge_y.extend([y0, y1, None])
+
+        node_x, node_y, node_text, node_size, node_color = [], [], [], [], []
+        for node in G.nodes():
+            x, y = pos[node]
+            node_x.append(x)
+            node_y.append(y)
+            if 'size' in G.nodes[node]:  # Channel node
+                node_size.append(G.nodes[node]['size'])
+                node_color.append(G.nodes[node]['score'])
+                node_text.append(f"{node}<br>Subs: {format_large_number(G.nodes[node]['size'])}")
+            else:  # Niche node
+                node_size.append(50000) # Fixed size for niches
+                node_color.append(0) # Neutral color
+                node_text.append(f"<b>{node}</b>")
+
+        fig_network = go.Figure()
+        fig_network.add_trace(go.Scatter(x=edge_x, y=edge_y, mode='lines', line=dict(color='gray', width=1)))
+        fig_network.add_trace(go.Scatter(
+            x=node_x, y=node_y, mode='markers+text', text=node_text,
+            marker=dict(size=np.log1p(node_size), color=node_color, colorscale='Plasma', showscale=True, colorbar_title='Genius Score'),
+            textfont=dict(size=10)
+        ))
+        fig_network.update_layout(showlegend=False, xaxis=dict(visible=False), yaxis=dict(visible=False), height=600)
+        st.plotly_chart(fig_network, use_container_width=True)
+
+    else:
+        st.info("Run an analysis in the 'Niche Discovery' tab to see the dashboard.")
+
+# --- Tab 3: Creator Toolkit ---
+with tab3:
+    st.header(T["toolkit_header"])
+
+    # Title Generator
+    with st.container(border=True):
+        st.subheader(T["title_gen_header"])
+        topic = st.text_input(T["title_gen_topic"])
+        angle = st.selectbox(T["title_gen_angle"], ["Curiosity", "Authority", "Problem/Solution", "Listicle"])
+        
+        if st.button(T["button_generate"]):
+            if topic:
+                # Simple templating logic
+                templates = {
+                    "Curiosity": [f"The Secret to {topic} They Don't Want You to Know", f"What if {topic} Was a Lie?", f"I Tried {topic} for 7 Days and This Happened..."],
+                    "Authority": [f"The Ultimate Guide to {topic}", f"5 {topic} Mistakes Every Beginner Makes", f"{topic}: From Zero to Pro in 10 Minutes"],
+                    "Problem/Solution": [f"Stop Wasting Time on {topic} - Do This Instead", f"The Real Reason Your {topic} Fails (and How to Fix It)", f"Finally, a {topic} Method That Actually Works"],
+                    "Listicle": [f"7 Insane {topic} Hacks That Will Blow Your Mind", f"Top 3 {topic} Tools You Can't Live Without", f"10 Things I Wish I Knew Before Starting {topic}"]
+                }
+                for t in templates[angle]:
+                    st.code(t, language=None)
+            else:
+                st.warning("Please enter a topic.")
+
+    # Content Scheduler
+    with st.container(border=True):
+        st.subheader(T["scheduler_header"])
+        st.info(T["scheduler_info"])
+        
+        videos_per_week = st.slider(T["videos_per_week"], 1, 7, 3)
+        hours = st.multiselect(T["preferred_hours"], [f"{h:02d}:00" for h in range(24)], default=["14:00", "16:00", "18:00"])
+        
+        if videos_per_week > 0 and hours:
+            st.subheader(T["schedule_plan"])
+            days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+            plan = defaultdict(list)
+            # Distribute videos as evenly as possible
+            interval = 7 / videos_per_week
+            current_day_idx = 0
+            for i in range(videos_per_week):
+                day_idx = int(current_day_idx) % 7
+                plan[days[day_idx]].append(np.random.choice(hours))
+                current_day_idx += interval
+            
+            for day in days:
+                if plan[day]:
+                    st.markdown(f"**{day}:** {', '.join(sorted(plan[day]))}")
+
+# --- Footer ---
 st.markdown("---")
-st.markdown("<p style='text-align: center; color: #666;'>Powered by advanced mathematical models</p>", unsafe_allow_html=True)
+st.caption("Genius Growth Engine | Fusing Data Science with Creator Strategy")
 
