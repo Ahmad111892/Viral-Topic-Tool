@@ -1,4 +1,5 @@
 import streamlit as st
+import requests
 import pandas as pd
 from datetime import datetime, timedelta
 import random
@@ -8,8 +9,7 @@ import json
 import time
 from pytrends.request import TrendReq
 import urllib.parse
-import requests
-import pytrends
+import plotly.express as px
 
 # Configuration
 st.set_page_config(page_title="Niche Success Analyzer", page_icon="🎯", layout="wide")
@@ -241,11 +241,17 @@ def get_niche_trending_data(niche_keywords):
     try:
         # Combine keywords for better analysis
         primary_keyword = niche_keywords[0] if niche_keywords else ""
-        
+        if not primary_keyword:
+            return None
+
         pytrends.build_payload([primary_keyword], timeframe='today 12-m', gprop='youtube')
         interest_data = pytrends.interest_over_time()
         
         if not interest_data.empty:
+            # Check if primary_keyword column exists
+            if primary_keyword not in interest_data.columns:
+                return None # Keyword might have no data
+
             current_month = interest_data[primary_keyword].iloc[-1]
             last_month = interest_data[primary_keyword].iloc[-2] if len(interest_data) > 1 else current_month
             six_months_ago = interest_data[primary_keyword].iloc[-6] if len(interest_data) > 6 else current_month
@@ -267,6 +273,7 @@ def get_niche_trending_data(niche_keywords):
         
         return None
     except Exception as e:
+        st.warning(f"Could not fetch trending data. Error: {e}")
         return None
 
 def calculate_niche_score(success_rate, trending_data, competition_level, monetization, beginner_friendly):
@@ -337,30 +344,31 @@ def get_success_stories(niche_name, niche_keywords, api_key):
                     video_ids = [video['id']['videoId'] for video in data['items'] if 'videoId' in video.get('id', {})]
                     
                     # Get video statistics
-                    stats_params = {
-                        'part': 'statistics,snippet',
-                        'id': ','.join(video_ids),
-                        'key': api_key
-                    }
-                    
-                    stats_response = requests.get(YOUTUBE_VIDEO_URL, params=stats_params)
-                    if stats_response.status_code == 200:
-                        stats_data = stats_response.json()
+                    if video_ids:
+                        stats_params = {
+                            'part': 'statistics,snippet',
+                            'id': ','.join(video_ids),
+                            'key': api_key
+                        }
                         
-                        for video in stats_data.get('items', []):
-                            views = int(video['statistics'].get('viewCount', 0))
-                            likes = int(video['statistics'].get('likeCount', 0))
-                            title = video['snippet'].get('title', '')
-                            channel_title = video['snippet'].get('channelTitle', '')
+                        stats_response = requests.get(YOUTUBE_VIDEO_URL, params=stats_params)
+                        if stats_response.status_code == 200:
+                            stats_data = stats_response.json()
                             
-                            if views > 50000:  # Only include successful videos
-                                success_stories.append({
-                                    'title': title[:60] + "..." if len(title) > 60 else title,
-                                    'channel': channel_title,
-                                    'views': views,
-                                    'likes': likes,
-                                    'video_id': video['id']
-                                })
+                            for video in stats_data.get('items', []):
+                                views = int(video['statistics'].get('viewCount', 0))
+                                likes = int(video['statistics'].get('likeCount', 0))
+                                title = video['snippet'].get('title', '')
+                                channel_title = video['snippet'].get('channelTitle', '')
+                                
+                                if views > 50000:  # Only include successful videos
+                                    success_stories.append({
+                                        'title': title[:60] + "..." if len(title) > 60 else title,
+                                        'channel': channel_title,
+                                        'views': views,
+                                        'likes': likes,
+                                        'video_id': video['id']
+                                    })
         
         # Sort by views and return top 5
         success_stories.sort(key=lambda x: x['views'], reverse=True)
@@ -412,13 +420,14 @@ def generate_content_ideas(niche_keywords):
     
     # Determine category based on keywords
     category = "educational"  # default
-    if any(word in ' '.join(niche_keywords).lower() for word in ['relationship', 'dating', 'love']):
+    joined_keywords = ' '.join(niche_keywords).lower()
+    if any(word in joined_keywords for word in ['relationship', 'dating', 'love']):
         category = "relationship"
-    elif any(word in ' '.join(niche_keywords).lower() for word in ['money', 'finance', 'budget']):
+    elif any(word in joined_keywords for word in ['money', 'finance', 'budget']):
         category = "finance"
-    elif any(word in ' '.join(niche_keywords).lower() for word in ['life', 'productivity', 'motivation']):
+    elif any(word in joined_keywords for word in ['life', 'productivity', 'motivation']):
         category = "lifestyle"
-    elif any(word in ' '.join(niche_keywords).lower() for word in ['food', 'cooking', 'recipe']):
+    elif any(word in joined_keywords for word in ['food', 'cooking', 'recipe']):
         category = "food"
     
     return content_templates.get(category, content_templates["educational"])
@@ -523,7 +532,6 @@ if analysis_method == "🏆 Pick from Proven Niches":
                                   f"{success_data['success_rate']:.1f}% success rate")
                     
                     with col2:
-                        # FIX: Added a check for total_videos to prevent ZeroDivisionError
                         viral_rate = (success_data['high_performing_videos'] / success_data['total_videos'] * 100) if success_data['total_videos'] > 0 else 0
                         st.metric("High Performing Videos", f"{success_data['high_performing_videos']}/{success_data['total_videos']}", 
                                   f"{viral_rate:.1f}% viral rate")
@@ -532,6 +540,22 @@ if analysis_method == "🏆 Pick from Proven Niches":
                         if trending_data:
                             st.metric("Current Trend", trending_data['trend_direction'], 
                                       f"Interest: {trending_data['current_interest']}")
+                
+                # NEW: Trend Graph
+                if trending_data and not trending_data['interest_data'].empty:
+                    st.subheader("📈 YouTube Search Interest Trend (Last 12 Months)")
+                    primary_keyword = niche_data['keywords'][0]
+                    if primary_keyword in trending_data['interest_data'].columns:
+                        fig = px.line(trending_data['interest_data'],
+                                      x=trending_data['interest_data'].index,
+                                      y=primary_keyword,
+                                      labels={'x': 'Date', 'y': 'Search Interest'},
+                                      title=f"Trend for '{primary_keyword}'")
+                        fig.update_layout(
+                            plot_bgcolor='rgba(0,0,0,0)',
+                            paper_bgcolor='rgba(0,0,0,0)',
+                        )
+                        st.plotly_chart(fig, use_container_width=True)
                 
                 # Success Stories
                 if success_stories:
@@ -607,83 +631,103 @@ elif analysis_method == "🔍 Analyze My Custom Niche":
     if st.button("🔍 Analyze My Niche", type="primary") and custom_keywords and YOUTUBE_API_KEY:
         keywords_list = [kw.strip() for kw in custom_keywords.strip().split('\n') if kw.strip()]
         
-        with st.spinner("🔍 Analyzing your custom niche..."):
-            
-            # Real-time analysis
-            success_data = analyze_niche_success_rate(keywords_list, YOUTUBE_API_KEY)
-            trending_data = get_niche_trending_data(keywords_list)
-            success_stories = get_success_stories(custom_niche_name, keywords_list, YOUTUBE_API_KEY)
-            
-            if success_data:
-                # Calculate custom niche score
-                estimated_competition = "Medium"  # Default estimation
-                if success_data['success_rate'] > 70:
-                    estimated_competition = "Low"
-                elif success_data['success_rate'] > 50:
-                    estimated_competition = "Low-Medium"
-                elif success_data['success_rate'] > 30:
-                    estimated_competition = "Medium"
-                else:
-                    estimated_competition = "High"
+        if keywords_list:
+            with st.spinner("🔍 Analyzing your custom niche..."):
                 
-                custom_score = calculate_niche_score(
-                    success_data['success_rate'],
-                    trending_data,
-                    estimated_competition,
-                    "Medium",  # Default monetization
-                    True  # Assume beginner friendly for custom niches
-                )
+                # Real-time analysis
+                success_data = analyze_niche_success_rate(keywords_list, YOUTUBE_API_KEY)
+                trending_data = get_niche_trending_data(keywords_list)
+                success_stories = get_success_stories(custom_niche_name, keywords_list, YOUTUBE_API_KEY)
                 
-                # Display results
-                st.markdown(f"""
-                <div style="text-align: center; padding: 1.5rem; background: {'linear-gradient(135deg, #4CAF50, #45a049)' if custom_score >= 80 else 'linear-gradient(135deg, #FF9800, #F57C00)' if custom_score >= 65 else 'linear-gradient(135deg, #f44336, #d32f2f)'}; border-radius: 15px; margin: 1rem 0; color: white;">
-                    <h1 style="margin: 0; font-size: 3rem;">{'🟢' if custom_score >= 80 else '🟡' if custom_score >= 65 else '🔴'} {custom_score}/100</h1>
-                    <h2 style="margin: 0;">{custom_niche_name}</h2>
-                    <h3 style="margin: 0; opacity: 0.9;">Niche Success Score</h3>
-                </div>
-                """, unsafe_allow_html=True)
-                
-                # Detailed metrics
-                col1, col2, col3, col4 = st.columns(4)
-                
-                with col1:
-                    st.metric("Success Rate", f"{success_data['success_rate']:.1f}%", 
-                              f"{'🟢 Excellent' if success_data['success_rate'] >= 70 else '🟡 Good' if success_data['success_rate'] >= 50 else '🔴 Challenging'}")
-                
-                with col2:
-                    viral_rate = (success_data['high_performing_videos']/success_data['total_videos']*100) if success_data['total_videos'] > 0 else 0
-                    st.metric("Viral Potential", f"{viral_rate:.1f}%", 
-                              f"{success_data['high_performing_videos']}/{success_data['total_videos']} videos")
-                
-                with col3:
-                    st.metric("Competition Level", f"📊 {estimated_competition}")
-                
-                with col4:
-                    if trending_data:
-                        st.metric("Trending Status", trending_data['trend_direction'], 
-                                  f"Current: {trending_data['current_interest']}")
-                
-                # Success verdict
-                if custom_score >= 80:
-                    st.success("🎉 **EXCELLENT NICHE!** This has high success potential. Start creating content immediately!")
-                elif custom_score >= 65:
-                    st.warning("✅ **GOOD NICHE!** With quality content and consistency, you can succeed in this niche.")
-                elif custom_score >= 50:
-                    st.warning("⚠️ **CHALLENGING NICHE!** Requires exceptional content quality and unique angle to succeed.")
-                else:
-                    st.error("❌ **DIFFICULT NICHE!** Consider finding a sub-niche or different approach.")
-                
-                # Success stories for custom niche
-                if success_stories:
-                    st.subheader("🏆 Success Stories in Your Niche")
-                    for story in success_stories[:3]:
-                        st.info(f"📺 **{story['title']}** - {story['views']:,} views by {story['channel']}")
-                
-                # Custom content ideas
-                st.subheader("💡 Content Ideas for Your Niche")
-                content_ideas = generate_content_ideas(keywords_list)
-                for i, idea in enumerate(content_ideas, 1):
-                    st.write(f"**{i}.** {idea}")
+                if success_data:
+                    # Calculate custom niche score
+                    estimated_competition = "Medium"  # Default estimation
+                    if success_data['success_rate'] > 70:
+                        estimated_competition = "Low"
+                    elif success_data['success_rate'] > 50:
+                        estimated_competition = "Low-Medium"
+                    elif success_data['success_rate'] > 30:
+                        estimated_competition = "Medium"
+                    else:
+                        estimated_competition = "High"
+                    
+                    custom_score = calculate_niche_score(
+                        success_data['success_rate'],
+                        trending_data,
+                        estimated_competition,
+                        "Medium",  # Default monetization
+                        True  # Assume beginner friendly for custom niches
+                    )
+                    
+                    # Display results
+                    st.markdown(f"""
+                    <div style="text-align: center; padding: 1.5rem; background: {'linear-gradient(135deg, #4CAF50, #45a049)' if custom_score >= 80 else 'linear-gradient(135deg, #FF9800, #F57C00)' if custom_score >= 65 else 'linear-gradient(135deg, #f44336, #d32f2f)'}; border-radius: 15px; margin: 1rem 0; color: white;">
+                        <h1 style="margin: 0; font-size: 3rem;">{'🟢' if custom_score >= 80 else '🟡' if custom_score >= 65 else '🔴'} {custom_score}/100</h1>
+                        <h2 style="margin: 0;">{custom_niche_name}</h2>
+                        <h3 style="margin: 0; opacity: 0.9;">Niche Success Score</h3>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    # Detailed metrics
+                    col1, col2, col3, col4 = st.columns(4)
+                    
+                    with col1:
+                        st.metric("Success Rate", f"{success_data['success_rate']:.1f}%", 
+                                  f"{'🟢 Excellent' if success_data['success_rate'] >= 70 else '🟡 Good' if success_data['success_rate'] >= 50 else '🔴 Challenging'}")
+                    
+                    with col2:
+                        viral_rate = (success_data['high_performing_videos']/success_data['total_videos']*100) if success_data['total_videos'] > 0 else 0
+                        st.metric("Viral Potential", f"{viral_rate:.1f}%", 
+                                  f"{success_data['high_performing_videos']}/{success_data['total_videos']} videos")
+                    
+                    with col3:
+                        st.metric("Competition Level", f"📊 {estimated_competition}")
+                    
+                    with col4:
+                        if trending_data:
+                            st.metric("Trending Status", trending_data['trend_direction'], 
+                                      f"Current: {trending_data['current_interest']}")
+                    
+                    # NEW: Trend Graph for Custom Niche
+                    if trending_data and not trending_data['interest_data'].empty:
+                        st.subheader("📈 YouTube Search Interest Trend (Last 12 Months)")
+                        primary_keyword = keywords_list[0]
+                        if primary_keyword in trending_data['interest_data'].columns:
+                            fig = px.line(trending_data['interest_data'],
+                                        x=trending_data['interest_data'].index,
+                                        y=primary_keyword,
+                                        labels={'x': 'Date', 'y': 'Search Interest'},
+                                        title=f"Trend for '{primary_keyword}'")
+                            fig.update_layout(
+                                plot_bgcolor='rgba(0,0,0,0)',
+                                paper_bgcolor='rgba(0,0,0,0)',
+                            )
+                            st.plotly_chart(fig, use_container_width=True)
+
+                    # Success verdict
+                    if custom_score >= 80:
+                        st.success("🎉 **EXCELLENT NICHE!** This has high success potential. Start creating content immediately!")
+                    elif custom_score >= 65:
+                        st.warning("✅ **GOOD NICHE!** With quality content and consistency, you can succeed in this niche.")
+                    elif custom_score >= 50:
+                        st.warning("⚠️ **CHALLENGING NICHE!** Requires exceptional content quality and unique angle to succeed.")
+                    else:
+                        st.error("❌ **DIFFICULT NICHE!** Consider finding a sub-niche or different approach.")
+                    
+                    # Success stories for custom niche
+                    if success_stories:
+                        st.subheader("🏆 Success Stories in Your Niche")
+                        for story in success_stories[:3]:
+                            st.info(f"📺 **{story['title']}** - {story['views']:,} views by {story['channel']}")
+                    
+                    # Custom content ideas
+                    st.subheader("💡 Content Ideas for Your Niche")
+                    content_ideas = generate_content_ideas(keywords_list)
+                    for i, idea in enumerate(content_ideas, 1):
+                        st.write(f"**{i}.** {idea}")
+        else:
+            st.warning("Please enter at least one keyword to analyze.")
+
 
 elif analysis_method == "❓ I'm Completely Lost - Help Me!":
     st.subheader("❓ Don't Worry! Let's Find Your Perfect Niche")
