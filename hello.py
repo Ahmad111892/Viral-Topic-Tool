@@ -988,6 +988,16 @@ with st.sidebar:
         help="Display engagement rates and growth analytics"
     )
     
+    # Search limits
+    st.subheader("🔢 Search Limits")
+    default_max_results = st.slider(
+        "Default Max Channels:",
+        min_value=10,
+        max_value=200,
+        value=50,
+        help="Default maximum channels to find"
+    )
+    
     # API usage tracking
     st.subheader("📊 API Usage")
     if 'api_calls_made' not in st.session_state:
@@ -1053,14 +1063,123 @@ COUNTRY_CODES = {
     "Canada": "CA",
     "United Kingdom": "GB",
     "Australia": "AU",
+    "India": "IN",
     "Germany": "DE",
     "France": "FR",
     "Brazil": "BR",
+    "Japan": "JP",
+    "South Korea": "KR",
     "Mexico": "MX",
     "Russia": "RU",
     "China": "CN",
     "Italy": "IT",
-    "Spain": "ES"
+    "Spain": "ES",
+    "Netherlands": "NL",
+    "Sweden": "SE",
+    "Norway": "NO",
+    "South Africa": "ZA",
+    "Argentina": "AR",
+    "Egypt": "EG",
+    "Indonesia": "ID",
+    "Turkey": "TR",
+    "Saudi Arabia": "SA",
+    "Pakistan": "PK",
+    "Bangladesh": "BD",
+    "Nigeria": "NG",
+    "Vietnam": "VN",
+    "Philippines": "PH",
+    "Thailand": "TH",
+    "Malaysia": "MY",
+    "Singapore": "SG",
+    "New Zealand": "NZ",
+    "United Arab Emirates": "AE",
+    "Israel": "IL",
+    "Ukraine": "UA",
+    "Poland": "PL",
+    "Switzerland": "CH",
+    "Belgium": "BE",
+    "Austria": "AT",
+    "Denmark": "DK",
+    "Finland": "FI",
+    "Ireland": "IE",
+    "Portugal": "PT",
+    "Greece": "GR",
+    "Chile": "CL",
+    "Colombia": "CO",
+    "Peru": "PE",
+    "Venezuela": "VE",
+    "Ecuador": "EC",
+    "Morocco": "MA",
+    "Algeria": "DZ",
+    "Kenya": "KE",
+    "Ghana": "GH",
+    "Ethiopia": "ET",
+    "Iraq": "IQ",
+    "Iran": "IR",
+    "Syria": "SY",
+    "Jordan": "JO",
+    "Lebanon": "LB",
+    "Qatar": "QA",
+    "Kuwait": "KW",
+    "Oman": "OM",
+    "Bahrain": "BH",
+    "Sri Lanka": "LK",
+    "Nepal": "NP",
+    "Myanmar": "MM",
+    "Cambodia": "KH",
+    "Laos": "LA",
+    "Mongolia": "MN",
+    "Afghanistan": "AF",
+    "Yemen": "YE",
+    "Sudan": "SD",
+    "Uganda": "UG",
+    "Angola": "AO",
+    "Zimbabwe": "ZW",
+    "Zambia": "ZM",
+    "Malawi": "MW",
+    "Mozambique": "MZ",
+    "Botswana": "BW",
+    "Namibia": "NA",
+    "Tunisia": "TN",
+    "Libya": "LY",
+    "Jamaica": "JM",
+    "Costa Rica": "CR",
+    "Panama": "PA",
+    "Cuba": "CU",
+    "Haiti": "HT",
+    "Dominican Republic": "DO",
+    "Guatemala": "GT",
+    "Honduras": "HN",
+    "El Salvador": "SV",
+    "Nicaragua": "NI",
+    "Paraguay": "PY",
+    "Uruguay": "UY",
+    "Bolivia": "BO",
+    "Serbia": "RS",
+    "Croatia": "HR",
+    "Bosnia and Herzegovina": "BA",
+    "Albania": "AL",
+    "Macedonia": "MK",
+    "Slovenia": "SI",
+    "Montenegro": "ME",
+    "Bulgaria": "BG",
+    "Romania": "RO",
+    "Hungary": "HU",
+    "Czech Republic": "CZ",
+    "Slovakia": "SK",
+    "Latvia": "LV",
+    "Lithuania": "LT",
+    "Estonia": "EE",
+    "Belarus": "BY",
+    "Moldova": "MD",
+    "Georgia": "GE",
+    "Armenia": "AM",
+    "Azerbaijan": "AZ",
+    "Kazakhstan": "KZ",
+    "Uzbekistan": "UZ",
+    "Turkmenistan": "TM",
+    "Kyrgyzstan": "KG",
+    "Tajikistan": "TJ"
 }
 
 # Main Tabs
@@ -1177,7 +1296,7 @@ with tab2:
             "🔢 How many channels to find? (e.g. 100):",
             min_value=1,
             max_value=500,
-            value=50,
+            value=default_max_results,
             help="Maximum number of channels to discover"
         )
     
@@ -1257,7 +1376,7 @@ with tab2:
                 channels = find_channels_with_criteria(api_key, search_params)
             
             if channels:
-                if analysis_depth == "Advanced Analytics":
+                if analysis_depth == "Deep":
                     with st.spinner("🧠 Performing advanced analysis..."):
                         channels = perform_advanced_channel_analysis(api_key, channels)
                 
@@ -1291,8 +1410,10 @@ with tab2:
                 
                 col7, col8, col9 = st.columns(3)
                 col7.metric("🌍 Country", channel['Country'])
-                col8.metric("💝 Engagement Rate", f"{channel.get('Recent Engagement Rate', 0):.3f}%") if 'Recent Engagement Rate' in channel else col8.empty()
-                col9.metric("📈 Recent Avg Views", format_number(channel.get('Recent Avg Views', 0))) if 'Recent Avg Views' in channel else col9.empty()
+                if 'Recent Engagement Rate' in channel:
+                    col8.metric("💝 Engagement Rate", f"{channel['Recent Engagement Rate']:.3f}%")
+                if 'Recent Avg Views' in channel:
+                    col9.metric("📈 Recent Avg Views", format_number(channel['Recent Avg Views']))
                 
                 if channel.get('Description'):
                     st.text_area("📝 Description:", channel['Description'], height=80, key=f"desc_finder_{i}")
