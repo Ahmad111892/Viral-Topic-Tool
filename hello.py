@@ -1526,10 +1526,10 @@ with tab3:
                         sorted_results = sorted(all_results, key=lambda x: x['Views'], reverse=True)
                         for i, result in enumerate(sorted_results[:15]):
                             with st.expander(f"#{i+1} {result['Title'][:60]}... • {format_number(result['Views'])} views"):
-                                st.write(f"**👥 Channel Subscribers:** {format_number(result['Subscribers'])}")
-                                st.write(f"**👀 Views:** {format_number(result['Views'])}")
-                                st.write(f"**🔍 Found via:** {result['Keyword']}")
-                                st.write(f"**📝 Description:** {result['Description']}")
+                                st.markdown(f"**👥 Channel Subscribers:** {format_number(result['Subscribers'])}")
+                                st.markdown(f"**👀 Views:** {format_number(result['Views'])}")
+                                st.markdown(f"**🔍 Found via:** {result['Keyword']}")
+                                st.markdown(f"**📝 Description:** {result['Description']}")
                                 st.markdown(f"[🔗 Watch Video]({result['URL']})")
                     else:
                         st.warning("😔 No viral videos found matching your criteria.")
@@ -1590,23 +1590,23 @@ with tab4:
         col1, col2, col3 = st.columns(3)
         
         with col1:
-            st.write("**👑 Most Subscribers:**")
+            st.markdown("**👑 Most Subscribers:**")
             top_subs = df_combined.nlargest(5, 'Subscribers')[['Channel Name', 'Subscribers']]
             for _, row in top_subs.iterrows():
-                st.write(f"• {row['Channel Name']}: {format_number(row['Subscribers'])}")
+                st.markdown(f"• {row['Channel Name']}: {format_number(row['Subscribers'])}")
         
         with col2:
-            st.write("**👀 Most Views:**")
+            st.markdown("**👀 Most Views:**")
             top_views = df_combined.nlargest(5, 'Total Views')[['Channel Name', 'Total Views']]
             for _, row in top_views.iterrows():
-                st.write(f"• {row['Channel Name']}: {format_number(row['Total Views'])}")
+                st.markdown(f"• {row['Channel Name']}: {format_number(row['Total Views'])}")
         
         with col3:
-            st.write("**🆕 Newest Channels:**")
+            st.markdown("**🆕 Newest Channels:**")
             df_combined['Channel Age (Days)'] = pd.to_numeric(df_combined['Channel Age (Days)'], errors='coerce')
             newest = df_combined.nsmallest(5, 'Channel Age (Days)')[['Channel Name', 'Channel Age (Days)']]
             for _, row in newest.iterrows():
-                st.write(f"• {row['Channel Name']}: {int(row['Channel Age (Days)'])} days")
+                st.markdown(f"• {row['Channel Name']}: {int(row['Channel Age (Days)'])} days")
         
     else:
         st.info("📊 Run analysis in other tabs first to see growth trajectory data.")
@@ -1666,7 +1666,6 @@ with tab5:
         
         with col3:
             if st.button("📋 Download Complete Report", use_container_width=True):
-                # Create comprehensive report
                 report_data = {
                     'summary': {
                         'niche_channels': niche_count,
@@ -1716,7 +1715,7 @@ with tab5:
                         centrality_scores[node] = network_analyzer.calculate_network_centrality(G, node)
                     
                     # Display top influential channels
-                    st.write("**🏆 Most Influential Channels in Network:**")
+                    st.markdown("**🏆 Most Influential Channels in Network:**")
                     sorted_influence = sorted(
                         centrality_scores.items(), 
                         key=lambda x: x[1]['influence_score'], 
@@ -1724,10 +1723,10 @@ with tab5:
                     )
                     
                     for i, (channel, scores) in enumerate(sorted_influence[:10]):
-                        st.write(f"{i+1}. {channel} - Influence Score: {scores['influence_score']:.3f}")
+                        st.markdown(f"{i+1}. **{channel}** - Influence Score: {scores['influence_score']:.3f}")
                 
             except Exception as e:
-                st.info("🌐 Network analysis requires additional data processing.")
+                st.info(f"🌐 Network analysis failed: {str(e)[:100]}")
     
     else:
         st.info("📊 Run analyses in other tabs to see comprehensive dashboard results.")
