@@ -475,16 +475,20 @@ def find_channels_with_criteria(api_key, search_params):
                     total_views = int(stats.get("viewCount", 0))
                     video_count = int(stats.get("videoCount", 0))
                     
-                    if creation_year and published_date.year != creation_year:
+                    # Apply creation year filter only if specified
+                    if creation_year and creation_year > 1900 and published_date.year != creation_year:
                         continue
                     
+                    # Apply subscriber filters
                     if not (min_subscribers <= subscribers <= max_subscribers):
                         continue
                     
+                    # Apply video count filters
                     if not (min_videos <= video_count <= max_videos):
                         continue
                     
-                    if description_keyword and description_keyword.lower() not in channel_description.lower():
+                    # Apply description keyword filter only if provided
+                    if description_keyword and description_keyword.strip() and description_keyword.lower() not in channel_description.lower():
                         continue
                     
                     channel_age_days = (datetime.now(published_date.tzinfo) - published_date).days
@@ -867,8 +871,8 @@ with tab2:
     
     st.markdown("""
     <div class="optional-section">
-        <h4>🎛️ Optional Filters (Press Enter to skip)</h4>
-        <p><em>Leave empty to skip these filters</em></p>
+        <h4>🎛️ Optional Filters (Leave blank to skip)</h4>
+        <p><em>These filters will only be applied if you enter values. Leave empty to ignore the filter.</em></p>
     </div>
     """, unsafe_allow_html=True)
     
@@ -876,38 +880,39 @@ with tab2:
     
     with col3:
         description_keyword = st.text_input(
-            "📝 Channel Description Keyword? (e.g. 'Copyright Disclaimer'):",
-            placeholder="Optional - leave empty to skip",
-            help="Find channels with specific words in their description"
+            "📝 Channel Description Keyword (Optional):",
+            value="",
+            placeholder="Leave empty to skip this filter",
+            help="Find channels with specific words in their description. Leave blank to skip."
         )
         
         min_subscribers = st.number_input(
-            "👥 Minimum Channel Subscribers? (e.g. 1):",
+            "👥 Minimum Channel Subscribers:",
             min_value=0,
             value=0,
-            help="Minimum subscriber count filter"
+            help="Set to 0 to include all channels regardless of subscriber count"
         )
         
         min_videos = st.number_input(
-            "🎬 Minimum Channel Videos? (e.g. 1):",
+            "🎬 Minimum Channel Videos:",
             min_value=0,
             value=0,
-            help="Minimum video count filter"
+            help="Set to 0 to include all channels regardless of video count"
         )
     
     with col4:
         max_subscribers = st.number_input(
-            "👥 Maximum Channel Subscribers? (e.g. 1000000):",
+            "👥 Maximum Channel Subscribers:",
             min_value=1,
-            value=1000000,
-            help="Maximum subscriber count filter"
+            value=10000000,
+            help="Set high value to include channels with any subscriber count"
         )
         
         max_videos = st.number_input(
-            "🎬 Maximum Channel Videos? (e.g. 10000):",
+            "🎬 Maximum Channel Videos:",
             min_value=1,
-            value=10000,
-            help="Maximum video count filter"
+            value=100000,
+            help="Set high value to include channels with any video count"
         )
 
     if st.button("🚀 Start Channel Discovery", type="primary", use_container_width=True):
