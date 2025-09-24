@@ -39,15 +39,20 @@ st.markdown("""
 <style>
 /* Root Variables for Consistent Theme */
 :root {
-    --primary-color: #667eea;
-    --secondary-color: #764ba2;
-    --accent-color: #4CAF50;
-    --text-color: #2c3e50;
-    --light-bg: #f8f9fa;
+    --primary-color: #6366f1;
+    --secondary-color: #8b5cf6;
+    --tertiary-color: #06b6d4;
+    --accent-color: #10b981;
+    --warning-color: #f59e0b;
+    --error-color: #ef4444;
+    --text-color: #1f2937;
+    --text-light: #6b7280;
+    --light-bg: #f9fafb;
     --white: #ffffff;
-    --shadow: 0 4px 15px rgba(0,0,0,0.1);
-    --shadow-hover: 0 8px 25px rgba(0,0,0,0.15);
-    --border-radius: 12px;
+    --border-color: #e5e7eb;
+    --shadow: 0 4px 20px rgba(0,0,0,0.08);
+    --shadow-hover: 0 12px 40px rgba(0,0,0,0.12);
+    --border-radius: 16px;
     --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -545,16 +550,23 @@ st.markdown("""
     }
     
     .stTabs [data-baseweb="tab-list"] {
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
         gap: 4px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        scroll-behavior: smooth;
+        padding-bottom: 8px;
     }
     
     .stTabs [data-baseweb="tab"] {
-        flex: 1;
-        min-width: 120px;
+        flex: none;
+        min-width: 140px;
         text-align: center;
-        padding: 10px 12px;
+        padding: 12px 16px;
         font-size: 0.85rem;
+        white-space: nowrap;
+        margin-right: 8px;
     }
     
     .stButton > button {
