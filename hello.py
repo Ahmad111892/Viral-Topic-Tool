@@ -91,6 +91,19 @@ st.markdown("""
         padding-left: 15px;
         margin: 20px 0;
     }
+
+    /* Responsive Design Media Query for smaller screens */
+    @media (max-width: 768px) {
+        .main-header {
+            padding: 20px;
+        }
+        .main-header h1 {
+            font-size: 1.8rem;
+        }
+        .stTabs [data-baseweb="tab-list"] {
+            flex-wrap: wrap;
+        }
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -1355,3 +1368,4 @@ st.markdown("""
     <p><em>Powered by YouTube Data API v3, advanced mathematical models, and AI-driven intelligence</em></p>
 </div>
 """, unsafe_allow_html=True)
+
