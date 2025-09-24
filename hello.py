@@ -37,604 +37,332 @@ st.set_page_config(
 # --- Custom CSS ---
 st.markdown("""
 <style>
-/* Root Variables for Consistent Theme */
-:root {
-    --primary-color: #5A67D8;
-    --secondary-color: #9F7AEA;
-    --accent-color: #48BB78;
-    --text-color: #1A202C;
-    --light-bg: #F7FAFC;
-    --white: #FFFFFF;
-    --shadow: 0 6px 20px rgba(0,0,0,0.08);
-    --shadow-hover: 0 10px 30px rgba(0,0,0,0.12);
-    --border-radius: 16px;
-    --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-}
+/* --- Refined & Professional YouTube Analytics Platform CSS --- */
 
-/* Global Animations */
+/* --- Keyframe Animations --- */
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(30px); }
+    from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes slideInRight {
-    from { opacity: 0; transform: translateX(50px); }
-    to { opacity: 1; transform: translateX(0); }
-}
-
-@keyframes pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.03); }
-}
-
 @keyframes shimmer {
-    0% { background-position: -300px 0; }
-    100% { background-position: calc(300px + 100%) 0; }
+    0% { background-position: -200px 0; }
+    100% { background-position: calc(200px + 100%) 0; }
 }
 
-@keyframes gradient-shift {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
+/* --- Root Variables for a Clean & Consistent Theme --- */
+:root {
+    --primary-color: #6366F1; /* A modern, friendly indigo */
+    --secondary-color: #8B5CF6; /* A complementary violet */
+    --accent-color: #10B981; /* A vibrant but clean emerald green */
+    --text-color: #374151; /* A dark gray for readability */
+    --text-color-light: #6B7280; /* A lighter gray for subtext */
+    --bg-color: #F9FAFB; /* A very light gray background */
+    --card-bg-color: #FFFFFF;
+    --border-color: #E5E7EB;
+    --border-radius: 12px;
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-@keyframes bounce {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-10px); }
+body {
+    background-color: var(--bg-color);
 }
 
-/* Main Header with Enhanced Animation */
+/* --- Main Header --- */
 .main-header {
-    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color), #ED64A6);
-    background-size: 600% 600%;
-    animation: gradient-shift 10s ease infinite;
-    padding: 50px 40px;
-    border-radius: var(--border-radius);
-    margin-bottom: 40px;
-    text-align: center;
-    color: var(--white);
-    box-shadow: var(--shadow);
-    position: relative;
-    overflow: hidden;
-    animation: fadeIn 1.2s ease-out;
-}
-
-.main-header::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -150%;
-    width: 150%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-    animation: shimmer 4s infinite;
-}
-
-.main-header h1 {
-    font-size: 2.8rem;
-    font-weight: 800;
-    margin-bottom: 12px;
-    text-shadow: 3px 3px 6px rgba(0,0,0,0.2);
-    animation: slideInRight 0.8s ease-out;
-}
-
-.main-header h3 {
-    font-size: 1.4rem;
-    font-weight: 500;
-    opacity: 0.9;
-    margin-bottom: 10px;
-    animation: slideInRight 1s ease-out;
-}
-
-.main-header p {
-    font-size: 1.1rem;
-    opacity: 0.85;
-    animation: slideInRight 1.2s ease-out;
-}
-
-/* Enhanced Metric Cards */
-.metric-card {
-    background: linear-gradient(145deg, var(--white), #EDF2F7);
-    border-radius: var(--border-radius);
-    padding: 25px;
-    margin: 20px 0;
-    border-left: 5px solid var(--accent-color);
-    box-shadow: var(--shadow);
-    transition: var(--transition);
-    animation: slideInRight 0.7s ease-out;
-    position: relative;
-    overflow: hidden;
-}
-
-.metric-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -150%;
-    width: 150%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(72, 187, 120, 0.15), transparent);
-    transition: left 0.5s ease;
-}
-
-.metric-card:hover {
-    transform: translateY(-8px);
-    box-shadow: var(--shadow-hover);
-    border-left-color: var(--primary-color);
-    animation: pulse 2s infinite;
-}
-
-.metric-card:hover::before {
-    left: 150%;
-}
-
-/* Professional Prediction Box */
-.prediction-box {
-    background: linear-gradient(145deg, #E6FFFA, #F0FFF4);
-    border-radius: var(--border-radius);
-    padding: 30px;
-    margin: 25px 0;
-    border: 2px solid var(--accent-color);
-    box-shadow: var(--shadow);
-    transition: var(--transition);
-    animation: fadeIn 0.9s ease-out;
-    position: relative;
-}
-
-.prediction-box::before {
-    content: '📈';
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    font-size: 2rem;
-    opacity: 0.25;
-    transition: var(--transition);
-}
-
-.prediction-box:hover {
-    transform: scale(1.03);
-    box-shadow: var(--shadow-hover);
-}
-
-.prediction-box:hover::before {
-    transform: rotate(10deg);
-}
-
-/* Enhanced Question Box */
-.question-box {
-    background: linear-gradient(145deg, var(--white), #EDF2F7);
-    border-radius: var(--border-radius);
-    padding: 30px;
-    margin: 25px 0;
-    border-left: 6px solid #2B6CB0;
-    box-shadow: var(--shadow);
-    color: var(--text-color);
-    transition: var(--transition);
-    animation: fadeIn 0.7s ease-out;
-    position: relative;
-}
-
-.question-box h4 {
-    color: #2B6CB0;
-    margin-bottom: 20px;
-    font-weight: 700;
-}
-
-.question-box::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, #2B6CB0, #1A4971);
-    border-radius: var(--border-radius) var(--border-radius) 0 0;
-}
-
-.question-box:hover {
-    transform: translateX(8px);
-    box-shadow: var(--shadow-hover);
-}
-
-/* Professional Result Cards */
-.result-card {
-    background: var(--white);
-    border-radius: var(--border-radius);
-    padding: 30px;
-    margin: 20px 0;
-    border: 1px solid #E2E8F0;
-    box-shadow: var(--shadow);
-    transition: var(--transition);
-    animation: slideInRight 0.6s ease-out;
-    position: relative;
-    overflow: hidden;
-}
-
-.result-card::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
-    transform: scaleX(0);
-    transform-origin: left;
-    transition: transform 0.4s ease;
-}
-
-.result-card:hover {
-    transform: translateY(-5px);
-    box-shadow: var(--shadow-hover);
-}
-
-.result-card:hover::after {
-    transform: scaleX(1);
-}
-
-/* Enhanced Optional Section */
-.optional-section {
-    background: linear-gradient(145deg, #FEF9C3, #FDE68A);
-    border: 2px solid #F6E05E;
-    border-radius: var(--border-radius);
-    padding: 25px;
-    margin: 25px 0;
-    transition: var(--transition);
-    animation: fadeIn 0.8s ease-out;
-    position: relative;
-}
-
-.optional-section::before {
-    content: '🛠️';
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    font-size: 1.5rem;
-    opacity: 0.35;
-    transition: var(--transition);
-}
-
-.optional-section:hover {
-    background: linear-gradient(145deg, #F6AD55, #F6E05E, #FEF9C3);
-    transform: scale(1.02);
-}
-
-.optional-section:hover::before {
-    transform: rotate(15deg);
-}
-
-.optional-section h4 {
-    color: #744210;
-    margin-bottom: 12px;
-    font-weight: 700;
-}
-
-.optional-section p {
-    color: #5A3E00;
-    margin-bottom: 0;
-}
-
-/* Einstein Quote Enhancement */
-.einstein-quote {
-    font-style: italic;
-    color: #4A5568;
-    border-left: 5px solid #3182CE;
-    padding: 25px 25px 25px 30px;
-    margin: 30px 0;
-    background: linear-gradient(145deg, #EBF8FF, #BEE3F8);
-    border-radius: 0 var(--border-radius) var(--border-radius) 0;
-    position: relative;
-    animation: fadeIn 1.1s ease-out;
-}
-
-.einstein-quote::before {
-    content: '"';
-    position: absolute;
-    left: -15px;
-    top: -15px;
-    font-size: 5rem;
-    color: #3182CE;
-    opacity: 0.25;
-    font-family: serif;
-}
-
-/* Button Enhancements */
-.stButton > button {
     background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-    color: var(--white);
-    border: none;
+    padding: 2.5rem 2rem;
     border-radius: var(--border-radius);
-    padding: 14px 28px;
+    margin-bottom: 2rem;
+    text-align: center;
+    color: white;
+    box-shadow: var(--shadow-lg);
+    animation: fadeIn 0.8s ease-out;
+}
+.main-header h1 {
+    font-size: 2.5rem;
     font-weight: 700;
+    margin-bottom: 0.5rem;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+}
+.main-header h3 {
+    font-size: 1.25rem;
+    font-weight: 400;
+    opacity: 0.9;
+}
+
+/* --- General Content Cards (Metric, Result, etc.) --- */
+.metric-card, .result-card, .question-box, .prediction-box, .optional-section {
+    background-color: var(--card-bg-color);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-md);
     transition: var(--transition);
-    box-shadow: var(--shadow);
-    position: relative;
-    overflow: hidden;
+    animation: fadeIn 0.6s ease-out forwards;
+    opacity: 0;
+    animation-delay: 0.2s;
+}
+.metric-card:hover, .result-card:hover, .question-box:hover, .prediction-box:hover, .optional-section:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
 }
 
-.stButton > button::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    background: rgba(255,255,255,0.25);
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
-    transition: width 0.4s, height 0.4s;
+/* Specific Card Styling */
+.question-box {
+    border-left: 4px solid var(--primary-color);
+}
+.question-box h4 {
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
 }
 
+.prediction-box {
+    background-color: #F0FFF4;
+    border-color: var(--accent-color);
+    border-left: 4px solid var(--accent-color);
+}
+.prediction-box h4 {
+    color: var(--accent-color);
+}
+
+.optional-section {
+    background: #FFFBEB;
+    border-color: #FBBF24;
+}
+.optional-section h4 {
+    color: #B45309;
+}
+
+/* --- Buttons --- */
+.stButton > button {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 24px;
+    font-weight: 600;
+    transition: var(--transition);
+    box-shadow: var(--shadow-md);
+}
 .stButton > button:hover {
-    transform: translateY(-3px);
-    box-shadow: var(--shadow-hover);
-    animation: bounce 0.5s ease;
+    background-color: var(--secondary-color);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
 }
-
-.stButton > button:hover::before {
-    width: 400px;
-    height: 400px;
-}
-
 .stButton > button:active {
     transform: translateY(0);
 }
 
-/* Sidebar Enhancements */
-.css-1d391kg {
-    background: linear-gradient(180deg, #EDF2F7, #E2E8F0);
-    border-right: 4px solid var(--primary-color);
-    padding: 20px;
-}
-
-/* Tab Enhancement */
+/* --- Tabs --- */
 .stTabs [data-baseweb="tab-list"] {
-    gap: 10px;
-    background: var(--white);
-    padding: 10px;
-    border-radius: var(--border-radius);
-    box-shadow: var(--shadow);
-    overflow-x: auto;
-    scrollbar-width: thin;
-    scrollbar-color: var(--primary-color) transparent;
-}
-
-.stTabs [data-baseweb="tab-list"]::-webkit-scrollbar {
-    height: 6px;
-}
-
-.stTabs [data-baseweb="tab-list"]::-webkit-scrollbar-track {
-    background: rgba(0,0,0,0.1);
-    border-radius: 12px;
-}
-
-.stTabs [data-baseweb="tab-list"]::-webkit-scrollbar-thumb {
-    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
-    border-radius: 12px;
-}
-
-.stTabs [data-baseweb="tab-list"]::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
-}
-
-.stTabs [data-baseweb="tab"] {
-    padding: 14px 24px;
+    background-color: rgba(255, 255, 255, 0.7);
+    padding: 6px;
     border-radius: 10px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
+}
+.stTabs [data-baseweb="tab"] {
+    padding: 10px 20px;
+    border-radius: 8px;
     transition: var(--transition);
-    font-weight: 600;
-    white-space: nowrap;
-    flex-shrink: 0;
+    font-weight: 500;
+    color: var(--text-color-light);
 }
-
 .stTabs [data-baseweb="tab"]:hover {
-    background: rgba(90, 103, 216, 0.15);
-    transform: translateY(-2px);
+    background-color: #F3F4F6;
+    color: var(--text-color);
 }
-
 .stTabs [data-baseweb="tab"][aria-selected="true"] {
     background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-    color: var(--white);
+    color: white;
+    box-shadow: var(--shadow-md);
 }
 
-/* Input Field Enhancements */
+/* --- Input Fields --- */
 .stTextInput > div > div > input,
 .stTextArea > div > div > textarea,
-.stSelectbox > div > div > select {
-    border-radius: 10px;
-    border: 2px solid #E2E8F0;
+.stSelectbox > div > div,
+.stNumberInput > div > div > input {
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
     transition: var(--transition);
-    padding: 14px 18px;
-    background: var(--white);
+    background-color: var(--card-bg-color);
 }
-
 .stTextInput > div > div > input:focus,
 .stTextArea > div > div > textarea:focus,
-.stSelectbox > div > div > select:focus {
+.stSelectbox > div > div:focus-within,
+.stNumberInput > div > div > input:focus {
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 4px rgba(90, 103, 216, 0.15);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
 }
 
-/* Metric Display Enhancement */
-.metric {
-    background: var(--white);
-    padding: 25px;
-    border-radius: var(--border-radius);
-    box-shadow: var(--shadow);
-    transition: var(--transition);
-    border-left: 5px solid var(--accent-color);
-    animation: fadeIn 0.6s ease-out;
+/* --- Sidebar --- */
+.css-1d391kg {
+    background-color: var(--card-bg-color);
+    border-right: 1px solid var(--border-color);
 }
 
-.metric:hover {
-    transform: translateY(-3px);
-    box-shadow: var(--shadow-hover);
-    animation: pulse 2s infinite;
-}
-
-/* Progress Bar Enhancement */
-.stProgress .progress-bar {
-    background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
-    border-radius: 12px;
-    animation: shimmer 3s infinite;
-}
-
-/* Expander Enhancement */
+/* --- Expander / Accordion --- */
 .streamlit-expander {
-    border: 1px solid #E2E8F0;
+    border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
     overflow: hidden;
     transition: var(--transition);
-    animation: slideInRight 0.5s ease-out;
+    box-shadow: var(--shadow-sm);
+    animation: fadeIn 0.5s ease-out;
 }
-
 .streamlit-expander:hover {
-    box-shadow: var(--shadow);
+    box-shadow: var(--shadow-md);
     border-color: var(--primary-color);
 }
-
 .streamlit-expander > summary {
-    background: linear-gradient(145deg, var(--white), #EDF2F7);
-    padding: 20px 25px;
-    transition: var(--transition);
-    font-weight: 600;
+    padding: 1rem 1.25rem;
+    font-weight: 500;
+    background-color: #F9FAFB;
 }
-
 .streamlit-expander > summary:hover {
-    background: linear-gradient(145deg, #EDF2F7, #E2E8F0);
+    background-color: #F3F4F6;
 }
 
-/* Dataframe Enhancement */
+/* --- Dataframe & Tables --- */
 .stDataFrame {
     border-radius: var(--border-radius);
     overflow: hidden;
-    box-shadow: var(--shadow);
-    animation: fadeIn 0.7s ease-out;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-color);
 }
 
-/* Loading Spinner Enhancement */
-.stSpinner {
-    animation: pulse 1.8s infinite;
-}
-
-/* Success/Error Message Enhancement */
-.stSuccess, .stError, .stWarning, .stInfo {
+/* --- Metric Display --- */
+.stMetric {
+    background-color: var(--card-bg-color);
+    padding: 1.5rem;
     border-radius: var(--border-radius);
-    animation: slideInRight 0.6s ease-out;
-    box-shadow: var(--shadow);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-md);
+    transition: var(--transition);
+}
+.stMetric:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lg);
 }
 
-.stSuccess {
-    border-left: 6px solid var(--accent-color);
+/* --- Progress Bar --- */
+.stProgress > div > div > div > div {
+    background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+    border-radius: 10px;
 }
 
-/* Responsive Design */
-@media (max-width: 1200px) {
+/* --- Alerts and Messages --- */
+.stAlert {
+    border-radius: var(--border-radius);
+    animation: fadeIn 0.5s ease-out;
+    box-shadow: var(--shadow-md);
+    border-left-width: 4px;
+    border-left-style: solid;
+}
+.st-emotion-cache-1wivapv.e1nzilvr5 { /* Success Alert */
+    border-left-color: var(--accent-color);
+}
+.st-emotion-cache-1wivapv.e1nzilvr4 { /* Info Alert */
+    border-left-color: var(--primary-color);
+}
+.st-emotion-cache-1wivapv.e1nzilvr3 { /* Warning Alert */
+    border-left-color: #FBBF24;
+}
+.st-emotion-cache-1wivapv.e1nzilvr2 { /* Error Alert */
+    border-left-color: #F87171;
+}
+
+/* --- Responsive Design --- */
+@media (max-width: 992px) {
     .main-header {
-        padding: 40px 30px;
+        padding: 2rem 1.5rem;
     }
-    
     .main-header h1 {
-        font-size: 2.5rem;
+        font-size: 2rem;
     }
 }
 
 @media (max-width: 768px) {
     .main-header {
-        padding: 30px 20px;
-        margin-bottom: 30px;
+        padding: 2rem 1rem;
+        margin-bottom: 1.5rem;
     }
-    
     .main-header h1 {
-        font-size: 2rem;
-        line-height: 1.4;
+        font-size: 1.75rem;
     }
-    
     .main-header h3 {
-        font-size: 1.2rem;
+        font-size: 1.1rem;
     }
-    
-    .main-header p {
-        font-size: 1rem;
+    .metric-card, .result-card, .question-box, .prediction-box, .optional-section {
+        padding: 1rem;
     }
-    
-    .metric-card,
-    .prediction-box,
-    .question-box,
-    .result-card,
-    .optional-section {
-        padding: 20px;
-        margin: 15px 0;
-    }
-    
-    .stTabs [data-baseweb="tab-list"] {
-        flex-wrap: wrap;
-        gap: 6px;
-    }
-    
-    .stTabs [data-baseweb="tab"] {
-        flex: 1;
-        min-width: 140px;
-        text-align: center;
-        padding: 12px 14px;
-        font-size: 0.9rem;
-    }
-    
     .stButton > button {
         width: 100%;
-        padding: 16px 24px;
-        font-size: 1.1rem;
+        padding: 14px 20px;
+    }
+    .stTabs [data-baseweb="tab"] {
+        flex-grow: 1;
+        text-align: center;
     }
 }
 
 @media (max-width: 480px) {
     .main-header h1 {
-        font-size: 1.8rem;
+        font-size: 1.5rem;
     }
-    
     .main-header h3 {
-        font-size: 1.1rem;
+        font-size: 1rem;
     }
-    
-    .metric-card,
-    .prediction-box,
-    .question-box,
-    .result-card,
-    .optional-section {
-        padding: 15px;
-        margin: 10px 0;
-    }
-    
-    .stTabs [data-baseweb="tab"] {
-        padding: 10px 12px;
-        font-size: 0.85rem;
-        min-width: 120px;
+    :root {
+        --border-radius: 10px;
     }
 }
 
-/* Dark Mode Support */
+/* --- Dark Mode Support --- */
 @media (prefers-color-scheme: dark) {
     :root {
         --text-color: #E2E8F0;
-        --light-bg: #2D3748;
-        --white: #1A202C;
+        --text-color-light: #94A3B8;
+        --bg-color: #1A202C;
+        --card-bg-color: #2D3748;
+        --border-color: #4A5568;
     }
-    
-    .metric-card,
-    .result-card,
-    .question-box {
-        background: linear-gradient(145deg, #2D3748, #4A5568);
-        color: #E2E8F0;
-        border-color: #718096;
+    .st-emotion-cache-1wivapv.e1nzilvr5, /* Success Alert */
+    .prediction-box {
+        background-color: rgba(16, 185, 129, 0.1);
+        border-color: var(--accent-color);
     }
-    
     .optional-section {
-        background: linear-gradient(145deg, #4C3A00, #5F4B00);
-        border-color: #ECC94B;
-        color: #ECC94B;
+        background-color: rgba(251, 191, 36, 0.1);
+        border-color: #FBBF24;
+    }
+    .stTabs [data-baseweb="tab-list"] {
+        background-color: rgba(0, 0, 0, 0.2);
+    }
+    .stTabs [data-baseweb="tab"]:hover {
+        background-color: #4A5568;
+    }
+    .streamlit-expander > summary {
+        background-color: #1A202C;
+    }
+    .streamlit-expander > summary:hover {
+        background-color: #2D3748;
     }
 }
 
-/* Accessibility Improvements */
+/* --- Accessibility Improvements --- */
+*:focus-visible {
+    outline: 3px solid var(--primary-color);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
 @media (prefers-reduced-motion: reduce) {
     * {
         animation-duration: 0.01ms !important;
@@ -643,45 +371,18 @@ st.markdown("""
     }
 }
 
-/* Focus Styles for Accessibility */
-*:focus {
-    outline: 4px solid rgba(90, 103, 216, 0.6);
-    outline-offset: 3px;
-}
-
-/* High Contrast Mode Support */
-@media (prefers-contrast: high) {
-    .main-header {
-        background: #000000;
-        color: #FFFFFF;
-        border: 4px solid #FFFFFF;
-    }
-    
-    .metric-card,
-    .result-card,
-    .question-box,
-    .optional-section {
-        border: 3px solid #000000;
-        background: #FFFFFF;
-        color: #000000;
-    }
-}
-
-/* Print Styles */
+/* --- Print Styles --- */
 @media print {
-    .main-header {
-        background: #F0F0F0 !important;
-        color: #000000 !important;
-        box-shadow: none !important;
+    .main-header, .stButton, .stTabs, .sidebar, .st-emotion-cache-16txtl3 {
+        display: none !important;
     }
-    
-    .metric-card,
-    .result-card,
-    .question-box,
-    .optional-section {
-        break-inside: avoid;
+    .metric-card, .result-card, .question-box, .prediction-box, .optional-section {
         box-shadow: none !important;
-        border: 2px solid #000000 !important;
+        border: 1px solid #ccc !important;
+        break-inside: avoid;
+    }
+    body {
+        background-color: #FFFFFF !important;
     }
 }
 </style>
