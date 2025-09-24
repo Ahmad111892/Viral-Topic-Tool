@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Complete YouTube Analytics Platform
+Complete YouTube Analytics Platform with Pagination
 Combines intelligent niche research, viral video finder, growth analysis, and channel finder
 Advanced analytics with mathematical models for YouTube success
 """
@@ -689,8 +689,8 @@ def find_viral_new_channels_enhanced(api_key, niche_ideas_list, video_type="Any"
         return apply_advanced_ranking(viral_channels)
     return viral_channels
 
-def find_channels_with_criteria(api_key, search_params):
-    """Find YouTube channels based on user-defined criteria"""
+def find_channels_with_criteria(api_key, search_params, results_container):
+    """Find YouTube channels based on user-defined criteria with pagination"""
     
     keywords = search_params.get('keywords', '')
     channel_type = search_params.get('channel_type', 'Any')
@@ -712,121 +712,166 @@ def find_channels_with_criteria(api_key, search_params):
     
     search_terms = [term.strip() for term in keywords.split(',') if term.strip()]
     
-    for i, term in enumerate(search_terms):
-        status_text.text(f"🔍 Searching for: '{term}' ({i + 1}/{len(search_terms)})")
-        progress_bar.progress((i + 1) / len(search_terms))
+    total_terms = len(search_terms)
+    channels_found = 0
+    
+    for term_idx, term in enumerate(search_terms):
+        page_token = None
+        page_count = 0
         
-        search_query_params = {
-            "part": "snippet", "q": term, "type": "video", "order": "relevance",
-            "maxResults": 50, "key": api_key
-        }
-        
-        if channel_type == "Short":
-            search_query_params['videoDuration'] = 'short'
-        elif channel_type == "Long":
-            search_query_params['videoDuration'] = 'long'
-        
-        if creation_year and creation_year > 1900:
-            start_date = f"{creation_year}-01-01T00:00:00Z"
-            end_date = f"{creation_year + 1}-01-01T00:00:00Z"
-            search_query_params['publishedAfter'] = start_date
-            search_query_params['publishedBefore'] = end_date
-        
-        if country != "Any":
-            search_query_params['regionCode'] = country
-        
-        search_response = fetch_youtube_data(YOUTUBE_SEARCH_URL, search_query_params)
-        if not search_response or not search_response.get("items"):
-            continue
-        
-        channel_ids = list(set([
-            item["snippet"]["channelId"] 
-            for item in search_response["items"] 
-            if item["snippet"]["channelId"] not in processed_channel_ids
-        ]))
-        
-        if not channel_ids:
-            continue
-        
-        for batch_start in range(0, len(channel_ids), 50):
-            batch_ids = channel_ids[batch_start:batch_start + 50]
+        while True:
+            status_text.text(f"🔍 Searching for: '{term}' (Page {page_count + 1}, {channels_found}/{max_channels} channels)")
+            progress_bar.progress(min((term_idx + 1) / total_terms, 1.0))
             
-            channel_params = {
-                "part": "snippet,statistics", "id": ",".join(batch_ids), "key": api_key
+            search_query_params = {
+                "part": "snippet",
+                "q": term,
+                "type": "video",
+                "order": "relevance",
+                "maxResults": 50,
+                "key": api_key
             }
             
-            channel_response = fetch_youtube_data(YOUTUBE_CHANNEL_URL, channel_params)
-            if not channel_response or not channel_response.get("items"):
-                continue
+            if channel_type == "Short":
+                search_query_params['videoDuration'] = 'short'
+            elif channel_type == "Long":
+                search_query_params['videoDuration'] = 'long'
             
-            for channel in channel_response["items"]:
-                try:
-                    snippet = channel.get("snippet", {})
-                    stats = channel.get("statistics", {})
-                    
-                    channel_name = snippet.get("title", "Unknown")
-                    channel_description = snippet.get("description", "")
-                    published_date = datetime.fromisoformat(
-                        snippet.get("publishedAt", "").replace("Z", "+00:00")
-                    )
-                    channel_country = snippet.get("country", "Unknown")
-                    
-                    subscribers = int(stats.get("subscriberCount", 0))
-                    total_views = int(stats.get("viewCount", 0))
-                    video_count = int(stats.get("videoCount", 0))
-                    
-                    # Apply creation year filter only if specified
-                    if creation_year and creation_year > 1900 and published_date.year != creation_year:
-                        continue
-                    
-                    # Apply subscriber filters
-                    if not (min_subscribers <= subscribers <= max_subscribers):
-                        continue
-                    
-                    # Apply video count filters
-                    if not (min_videos <= video_count <= max_videos):
-                        continue
-                    
-                    # Apply description keyword filter only if provided
-                    if description_keyword and description_keyword.strip() and description_keyword.lower() not in channel_description.lower():
-                        continue
-                    
-                    # Apply country filter only if specified
-                    if country != "Any" and channel_country != country:
-                        continue
-                    
-                    channel_age_days = (datetime.now(published_date.tzinfo) - published_date).days
-                    avg_views_per_video = total_views / max(video_count, 1)
-                    subscriber_velocity = subscribers / max(channel_age_days, 1)
-                    
-                    channel_data = {
-                        "Channel Name": channel_name,
-                        "URL": f"https://www.youtube.com/channel/{channel['id']}",
-                        "Subscribers": subscribers,
-                        "Total Views": total_views,
-                        "Video Count": video_count,
-                        "Creation Date": published_date.strftime("%Y-%m-%d"),
-                        "Channel Age (Days)": channel_age_days,
-                        "Found Via Keyword": term,
-                        "Subscriber Velocity": round(subscriber_velocity, 4),
-                        "Avg Views per Video": round(avg_views_per_video, 0),
-                        "Description": channel_description[:200] + "..." if len(channel_description) > 200 else channel_description,
-                        "Country": channel_country
-                    }
-                    
-                    found_channels.append(channel_data)
-                    processed_channel_ids.add(channel['id'])
-                    
-                    if len(found_channels) >= max_channels:
-                        break
-                        
-                except (ValueError, KeyError) as e:
+            if creation_year and creation_year > 1900:
+                start_date = f"{creation_year}-01-01T00:00:00Z"
+                end_date = f"{creation_year + 1}-01-01T00:00:00Z"
+                search_query_params['publishedAfter'] = start_date
+                search_query_params['publishedBefore'] = end_date
+            
+            if country != "Any":
+                search_query_params['regionCode'] = country
+            
+            if page_token:
+                search_query_params['pageToken'] = page_token
+            
+            search_response = fetch_youtube_data(YOUTUBE_SEARCH_URL, search_query_params)
+            if not search_response or not search_response.get("items"):
+                break
+            
+            channel_ids = list(set([
+                item["snippet"]["channelId"] 
+                for item in search_response["items"] 
+                if item["snippet"]["channelId"] not in processed_channel_ids
+            ]))
+            
+            if not channel_ids:
+                break
+            
+            for batch_start in range(0, len(channel_ids), 50):
+                batch_ids = channel_ids[batch_start:batch_start + 50]
+                
+                channel_params = {
+                    "part": "snippet,statistics", "id": ",".join(batch_ids), "key": api_key
+                }
+                
+                channel_response = fetch_youtube_data(YOUTUBE_CHANNEL_URL, channel_params)
+                if not channel_response or not channel_response.get("items"):
                     continue
+                
+                for channel in channel_response["items"]:
+                    try:
+                        snippet = channel.get("snippet", {})
+                        stats = channel.get("statistics", {})
+                        
+                        channel_name = snippet.get("title", "Unknown")
+                        channel_description = snippet.get("description", "")
+                        published_date = datetime.fromisoformat(
+                            snippet.get("publishedAt", "").replace("Z", "+00:00")
+                        )
+                        channel_country = snippet.get("country", "Unknown")
+                        
+                        subscribers = int(stats.get("subscriberCount", 0))
+                        total_views = int(stats.get("viewCount", 0))
+                        video_count = int(stats.get("videoCount", 0))
+                        
+                        # Apply creation year filter only if specified
+                        if creation_year and creation_year > 1900 and published_date.year != creation_year:
+                            continue
+                        
+                        # Apply subscriber filters
+                        if not (min_subscribers <= subscribers <= max_subscribers):
+                            continue
+                        
+                        # Apply video count filters
+                        if not (min_videos <= video_count <= max_videos):
+                            continue
+                        
+                        # Apply description keyword filter only if provided
+                        if description_keyword and description_keyword.strip() and description_keyword.lower() not in channel_description.lower():
+                            continue
+                        
+                        # Apply country filter only if specified
+                        if country != "Any" and channel_country != country:
+                            continue
+                        
+                        channel_age_days = (datetime.now(published_date.tzinfo) - published_date).days
+                        avg_views_per_video = total_views / max(video_count, 1)
+                        subscriber_velocity = subscribers / max(channel_age_days, 1)
+                        
+                        channel_data = {
+                            "Channel Name": channel_name,
+                            "URL": f"https://www.youtube.com/channel/{channel['id']}",
+                            "Subscribers": subscribers,
+                            "Total Views": total_views,
+                            "Video Count": video_count,
+                            "Creation Date": published_date.strftime("%Y-%m-%d"),
+                            "Channel Age (Days)": channel_age_days,
+                            "Found Via Keyword": term,
+                            "Subscriber Velocity": round(subscriber_velocity, 4),
+                            "Avg Views per Video": round(avg_views_per_video, 0),
+                            "Description": channel_description[:200] + "..." if len(channel_description) > 200 else channel_description,
+                            "Country": channel_country
+                        }
+                        
+                        found_channels.append(channel_data)
+                        processed_channel_ids.add(channel['id'])
+                        channels_found += 1
+                        
+                        # Display channel incrementally
+                        with results_container:
+                            with st.expander(f"#{channels_found} {channel_data['Channel Name']} • {format_number(channel_data['Subscribers'])} subscribers", expanded=(channels_found <= 3)):
+                                col1, col2, col3 = st.columns(3)
+                                col1.metric("📊 Subscribers", format_number(channel_data['Subscribers']))
+                                col2.metric("👀 Total Views", format_number(channel_data['Total Views']))
+                                col3.metric("🎬 Videos", channel_data['Video Count'])
+                                
+                                col4, col5, col6 = st.columns(3)
+                                col4.metric("📅 Created", channel_data['Creation Date'])
+                                col5.metric("⏱️ Age", f"{channel_data['Channel Age (Days)']} days")
+                                col6.metric("🔍 Found via", channel_data['Found Via Keyword'])
+                                
+                                col7, col8, col9 = st.columns(3)
+                                col7.metric("🌍 Country", channel_data['Country'])
+                                col8.metric("🚀 Subscriber Velocity", f"{channel_data['Subscriber Velocity']:.4f}")
+                                col9.metric("👀 Avg Views/Video", format_number(channel_data['Avg Views per Video']))
+                                
+                                if channel_data.get('Description'):
+                                    st.text_area("📝 Description:", channel_data['Description'], height=80, key=f"desc_finder_inc_{channels_found}_{term_idx}")
+                                
+                                st.markdown(f"[🔗 Visit Channel]({channel_data['URL']})")
+                        
+                        if channels_found >= max_channels:
+                            break
+                    except (ValueError, KeyError) as e:
+                        continue
+                
+                if channels_found >= max_channels:
+                    break
             
-            if len(found_channels) >= max_channels:
+            if channels_found >= max_channels:
+                break
+            
+            page_token = search_response.get('nextPageToken')
+            page_count += 1
+            if not page_token:
                 break
         
-        if len(found_channels) >= max_channels:
+        if channels_found >= max_channels:
             break
     
     progress_bar.empty()
@@ -1050,7 +1095,7 @@ with st.sidebar:
     st.markdown("---")
     st.markdown("""
     <div style="color: #888; font-size: 0.8em;">
-        <p>YouTube Analytics Platform v2.0<br>
+        <p>YouTube Analytics Platform v2.1<br>
         Built with Streamlit & YouTube Data API v3<br>
         Last Updated: September 2025</p>
     </div>
@@ -1353,6 +1398,8 @@ with tab2:
             help="Select a country to filter channels by their location. Choose 'Any' to skip this filter."
         )
 
+    results_container = st.container()
+
     if st.button("🚀 Start Channel Discovery", type="primary", use_container_width=True):
         if not api_key:
             st.error("🔐 Please configure your YouTube API key in the sidebar first!")
@@ -1373,7 +1420,7 @@ with tab2:
             }
             
             with st.spinner("🔍 Searching for channels..."):
-                channels = find_channels_with_criteria(api_key, search_params)
+                channels = find_channels_with_criteria(api_key, search_params, results_container)
             
             if channels:
                 if analysis_depth == "Deep":
@@ -1381,44 +1428,47 @@ with tab2:
                         channels = perform_advanced_channel_analysis(api_key, channels)
                 
                 st.session_state.channel_finder_results = channels
-                st.success(f"🎉 Discovery complete! Found {len(channels)} channels matching your criteria.")
-                
-                preview_df = pd.DataFrame(channels)
-                st.dataframe(
-                    preview_df[['Channel Name', 'Subscribers', 'Video Count', 'Creation Date', 'Country']].head(10),
-                    use_container_width=True
-                )
+                with results_container:
+                    st.success(f"🎉 Discovery complete! Found {len(channels)} channels matching your criteria.")
+                    
+                    preview_df = pd.DataFrame(channels)
+                    st.dataframe(
+                        preview_df[['Channel Name', 'Subscribers', 'Video Count', 'Creation Date', 'Country']].head(10),
+                        use_container_width=True
+                    )
             else:
-                st.warning("😔 No channels found matching your criteria. Try adjusting your filters.")
+                with results_container:
+                    st.warning("😔 No channels found matching your criteria. Try adjusting your filters.")
 
     # Display channel finder results
     if 'channel_finder_results' in st.session_state and st.session_state.channel_finder_results:
-        st.subheader("📊 Channel Discovery Results")
-        channels_data = st.session_state.channel_finder_results
-        
-        for i, channel in enumerate(channels_data[:20]):  # Show first 20
-            with st.expander(f"#{i+1} {channel['Channel Name']} • {format_number(channel['Subscribers'])} subscribers"):
-                col1, col2, col3 = st.columns(3)
-                col1.metric("📊 Subscribers", format_number(channel['Subscribers']))
-                col2.metric("👀 Total Views", format_number(channel['Total Views']))
-                col3.metric("🎬 Videos", channel['Video Count'])
-                
-                col4, col5, col6 = st.columns(3)
-                col4.metric("📅 Created", channel['Creation Date'])
-                col5.metric("⏱️ Age", f"{channel['Channel Age (Days)']} days")
-                col6.metric("🔍 Found via", channel['Found Via Keyword'])
-                
-                col7, col8, col9 = st.columns(3)
-                col7.metric("🌍 Country", channel['Country'])
-                if 'Recent Engagement Rate' in channel:
-                    col8.metric("💝 Engagement Rate", f"{channel['Recent Engagement Rate']:.3f}%")
-                if 'Recent Avg Views' in channel:
-                    col9.metric("📈 Recent Avg Views", format_number(channel['Recent Avg Views']))
-                
-                if channel.get('Description'):
-                    st.text_area("📝 Description:", channel['Description'], height=80, key=f"desc_finder_{i}")
-                
-                st.markdown(f"[🔗 Visit Channel]({channel['URL']})")
+        with results_container:
+            st.subheader("📊 Channel Discovery Results")
+            channels_data = st.session_state.channel_finder_results
+            
+            for i, channel in enumerate(channels_data[:20]):  # Show first 20
+                with st.expander(f"#{i+1} {channel['Channel Name']} • {format_number(channel['Subscribers'])} subscribers"):
+                    col1, col2, col3 = st.columns(3)
+                    col1.metric("📊 Subscribers", format_number(channel['Subscribers']))
+                    col2.metric("👀 Total Views", format_number(channel['Total Views']))
+                    col3.metric("🎬 Videos", channel['Video Count'])
+                    
+                    col4, col5, col6 = st.columns(3)
+                    col4.metric("📅 Created", channel['Creation Date'])
+                    col5.metric("⏱️ Age", f"{channel['Channel Age (Days)']} days")
+                    col6.metric("🔍 Found via", channel['Found Via Keyword'])
+                    
+                    col7, col8, col9 = st.columns(3)
+                    col7.metric("🌍 Country", channel['Country'])
+                    if 'Recent Engagement Rate' in channel:
+                        col8.metric("💝 Engagement Rate", f"{channel['Recent Engagement Rate']:.3f}%")
+                    if 'Recent Avg Views' in channel:
+                        col9.metric("📈 Recent Avg Views", format_number(channel['Recent Avg Views']))
+                    
+                    if channel.get('Description'):
+                        st.text_area("📝 Description:", channel['Description'], height=80, key=f"desc_finder_{i}")
+                    
+                    st.markdown(f"[🔗 Visit Channel]({channel['URL']})")
 
 # Tab 3: Viral Video Finder
 with tab3:
