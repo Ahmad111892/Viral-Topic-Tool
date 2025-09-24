@@ -67,6 +67,7 @@ st.markdown("""
         margin: 15px 0;
         border-left: 5px solid #007bff;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        color: black; /* Text color changed to black */
     }
     .result-card {
         background-color: #ffffff;
@@ -681,16 +682,6 @@ with st.sidebar:
         "Show Advanced Metrics",
         value=True,
         help="Display engagement rates and growth analytics"
-    )
-    
-    # Search limits
-    st.subheader("🔢 Search Limits")
-    default_max_results = st.slider(
-        "Default Max Channels:",
-        min_value=10,
-        max_value=200,
-        value=50,
-        help="Default maximum channels to find"
     )
     
     # API usage tracking
