@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Complete YouTube Analytics Platform
-Combines intelligent niche research, viral video finder, growth analysis, and channel finder
-Advanced analytics with mathematical models for YouTube success
+YouTube Channel Finder - Advanced Web Application
+A comprehensive tool to find and analyze YouTube channels based on multiple criteria
+Combines user input questions with advanced analytics and growth intelligence
 """
 
 import streamlit as st
@@ -16,11 +16,6 @@ from scipy.optimize import curve_fit
 import plotly.graph_objects as go
 import plotly.express as px
 import networkx as nx
-try:
-    from textstat import flesch_reading_ease
-except ImportError:
-    def flesch_reading_ease(text):
-        return 50  # Default score if textstat not available
 import re
 from sklearn.preprocessing import StandardScaler
 import warnings
@@ -28,8 +23,8 @@ warnings.filterwarnings('ignore')
 
 # --- Page Configuration ---
 st.set_page_config(
-    page_title="YouTube Complete Analytics Platform",
-    page_icon="🚀",
+    page_title="🔍 YouTube Channel Finder - Advanced Analytics",
+    page_icon="🔍",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -44,21 +39,6 @@ st.markdown("""
         margin-bottom: 30px;
         text-align: center;
         color: white;
-    }
-    .metric-card {
-        background-color: #f0f2f6;
-        border-radius: 10px;
-        padding: 15px;
-        margin: 10px;
-        border-left: 5px solid #4CAF50;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    }
-    .prediction-box {
-        background-color: #e8f5e8;
-        border-radius: 10px;
-        padding: 20px;
-        margin: 15px 0;
-        border: 2px solid #4CAF50;
     }
     .question-box {
         background-color: #f8f9fa;
@@ -76,6 +56,15 @@ st.markdown("""
         border: 1px solid #e0e0e0;
         box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
+    .metric-highlight {
+        background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+        color: white;
+        padding: 10px 15px;
+        border-radius: 8px;
+        margin: 5px;
+        display: inline-block;
+        font-weight: bold;
+    }
     .optional-section {
         background-color: #fff3cd;
         border: 1px solid #ffeaa7;
@@ -83,27 +72,15 @@ st.markdown("""
         padding: 15px;
         margin: 15px 0;
     }
-    .einstein-quote {
-        font-style: italic;
-        color: #666;
-        border-left: 3px solid #2196F3;
-        padding-left: 15px;
-        margin: 20px 0;
-    }
 </style>
 """, unsafe_allow_html=True)
 
-# --- Mathematical Constants & Configuration ---
-GOLDEN_RATIO = (1 + np.sqrt(5)) / 2
-EULER_NUMBER = np.e
-PI = np.pi
-
-# API Configuration
+# --- API Configuration ---
 YOUTUBE_SEARCH_URL = "https://www.googleapis.com/youtube/v3/search"
 YOUTUBE_VIDEO_URL = "https://www.googleapis.com/youtube/v3/videos"
 YOUTUBE_CHANNEL_URL = "https://www.googleapis.com/youtube/v3/channels"
 
-# --- Advanced Mathematical Models ---
+# --- Advanced Analytics Classes ---
 class GrowthAnalyzer:
     @staticmethod
     def exponential_growth_model(t, a, b, c):
@@ -112,10 +89,6 @@ class GrowthAnalyzer:
     @staticmethod
     def logistic_growth_model(t, L, k, t0):
         return L / (1 + np.exp(-k * (t - t0)))
-
-    @staticmethod
-    def power_law_model(x, a, b):
-        return a * np.power(x, b)
 
     @staticmethod
     def calculate_growth_velocity(data_points, time_intervals):
@@ -152,41 +125,7 @@ class ViralityPredictor:
         engagement_score = (like_rate + 3 * comment_rate) / duration_factor
         return 10 / (1 + np.exp(-engagement_score + 2))
 
-class NetworkAnalyzer:
-    @staticmethod
-    def build_topic_network(channels_data):
-        G = nx.Graph()
-        for channel in channels_data:
-            G.add_node(
-                channel.get('Channel Name', ''),
-                subscribers=channel.get('Subscribers', 0),
-                niche=channel.get('Found Via Niche', channel.get('Found Via Keyword', ''))
-            )
-        niches = defaultdict(list)
-        for channel in channels_data:
-            niche_key = channel.get('Found Via Niche', channel.get('Found Via Keyword', ''))
-            niches[niche_key].append(channel.get('Channel Name', ''))
-        for niche, channels in niches.items():
-            for i, channel1 in enumerate(channels):
-                for channel2 in channels[i+1:]:
-                    G.add_edge(channel1, channel2, weight=1.0, niche=niche)
-        return G
-
-    @staticmethod
-    def calculate_network_centrality(G, node):
-        try:
-            betweenness = nx.betweenness_centrality(G)[node]
-            closeness = nx.closeness_centrality(G)[node]
-            degree = nx.degree_centrality(G)[node]
-            return {
-                'betweenness': betweenness,
-                'closeness': closeness,
-                'degree': degree,
-                'influence_score': (betweenness + closeness + degree) / 3
-            }
-        except Exception:
-            return {'betweenness': 0, 'closeness': 0, 'degree': 0, 'influence_score': 0}
-
+# --- Utility Functions ---
 @st.cache_data(ttl=3600)
 def fetch_youtube_data(url, params):
     """Fetch data from YouTube API with caching"""
@@ -220,188 +159,17 @@ def format_number(num):
     else:
         return str(num)
 
-def perform_advanced_analysis(api_key, channel_id, channel_data, analysis_depth):
-    """Perform advanced analysis on a single channel"""
-    analyzer = GrowthAnalyzer()
-    predictor = ViralityPredictor()
-    analysis_results = {
-        "Engagement Score": 0, "Viral Potential": 0, "Growth Velocity": 0,
-        "Growth Acceleration": 0, "Content Consistency": 0, "Monetization Signals": [],
-        "Readability Score": 0, "Topic Coherence": 0, "Optimal Upload Times": [],
-        "Predicted Growth Trajectory": "Stable"
-    }
-    
-    try:
-        video_search_params = {
-            "part": "snippet", "channelId": channel_id, "order": "date",
-            "maxResults": 25, "key": api_key
-        }
-        video_response = fetch_youtube_data(YOUTUBE_SEARCH_URL, video_search_params)
-        if not video_response or not video_response.get("items"): 
-            return analysis_results
-        
-        video_ids = [item["id"]["videoId"] for item in video_response["items"] if "videoId" in item.get("id", {})]
-        if not video_ids: 
-            return analysis_results
-            
-        video_details_params = {
-            "part": "statistics,snippet,contentDetails", "id": ",".join(video_ids), "key": api_key
-        }
-        details_response = fetch_youtube_data(YOUTUBE_VIDEO_URL, video_details_params)
-        if not details_response or not details_response.get("items"): 
-            return analysis_results
-
-        videos_data = details_response.get("items", [])
-        metrics = defaultdict(list)
-        for video in videos_data:
-            stats, snippet, content_details = video.get("statistics", {}), video.get("snippet", {}), video.get("contentDetails", {})
-            metrics['views'].append(int(stats.get("viewCount", 0)))
-            metrics['likes'].append(int(stats.get("likeCount", 0)))
-            metrics['comments'].append(int(stats.get("commentCount", 0)))
-            metrics['titles'].append(snippet.get("title", ""))
-            metrics['descriptions'].append(snippet.get("description", ""))
-            metrics['durations'].append(parse_youtube_duration(content_details.get("duration", "PT0S")))
-            if snippet.get("publishedAt"):
-                metrics['publish_dates'].append(datetime.fromisoformat(snippet["publishedAt"].replace("Z", "+00:00")))
-        
-        if len(metrics['views']) > 2:
-            engagement_scores, viral_coefficients = [], []
-            subscriber_count = int(channel_data.get("statistics", {}).get("subscriberCount", 1))
-
-            for i in range(len(metrics['views'])):
-                if metrics['views'][i] > 0:
-                    engagement_scores.append(predictor.engagement_quality_score(
-                        metrics['likes'][i], metrics['comments'][i], 
-                        metrics['views'][i], metrics['durations'][i]
-                    ))
-                    time_since = datetime.now(metrics['publish_dates'][i].tzinfo) - metrics['publish_dates'][i]
-                    viral_coefficients.append(predictor.calculate_viral_coefficient(
-                        metrics['views'][i], time_since, subscriber_count
-                    ))
-            
-            if engagement_scores: 
-                analysis_results["Engagement Score"] = np.mean(engagement_scores)
-            if viral_coefficients: 
-                analysis_results["Viral Potential"] = np.mean(viral_coefficients) * 100
-
-            if len(metrics['publish_dates']) > 3:
-                sorted_data = sorted(zip(metrics['publish_dates'], metrics['views']))
-                dates, views = zip(*sorted_data)
-                time_deltas = [(d - dates[0]).days for d in dates]
-                analysis_results["Growth Velocity"] = analyzer.calculate_growth_velocity(views, time_deltas)
-                analysis_results["Growth Acceleration"] = analyzer.calculate_growth_acceleration(views, time_deltas)
-
-            if np.mean(metrics['views']) > 0:
-                view_cv = np.std(metrics['views']) / np.mean(metrics['views'])
-                analysis_results["Content Consistency"] = max(0, 100 - (view_cv * 100))
-
-        all_text = " ".join(metrics['titles'] + metrics['descriptions'])
-        if all_text:
-            try:
-                analysis_results["Readability Score"] = flesch_reading_ease(all_text)
-            except Exception:
-                analysis_results["Readability Score"] = 50
-
-    except Exception as e:
-        st.warning(f"Partial analysis due to: {e}")
-
-    channel_description = channel_data.get("snippet", {}).get("description", "")
-    monetization_patterns = {
-        'Affiliate': r'affiliate|commission', 
-        'Sponsorship': r'sponsor|brand deal', 
-        'Merchandise': r'merch|store', 
-        'Course': r'course|masterclass', 
-        'Patreon': r'patreon|ko-fi'
-    }
-    detected_signals = [
-        sig_type for sig_type, pattern in monetization_patterns.items() 
-        if re.search(pattern, channel_description.lower())
-    ]
-    analysis_results["Monetization Signals"] = detected_signals
-
-    return analysis_results
-
-def find_viral_new_channels_enhanced(api_key, niche_ideas_list, video_type="Any", analysis_depth="Deep"):
-    """Find viral new channels for niche research"""
-    viral_channels = []
-    current_year = datetime.now().year
-    progress_bar = st.progress(0)
-    status_text = st.empty()
-    processed_channel_ids = set()
-
-    for i, niche in enumerate(niche_ideas_list):
-        status_text.text(f"🔬 Analyzing niche '{niche}'... ({i + 1}/{len(niche_ideas_list)})")
-        progress_bar.progress((i + 1) / len(niche_ideas_list))
-        
-        search_params = {
-            "part": "snippet", "q": niche, "type": "video", "order": "relevance",
-            "publishedAfter": (datetime.utcnow() - timedelta(days=120)).isoformat("T") + "Z",
-            "maxResults": 30, "key": api_key
-        }
-        if video_type != "Any":
-            search_params['videoDuration'] = 'short' if video_type == "Shorts Channel" else 'long'
-        
-        search_response = fetch_youtube_data(YOUTUBE_SEARCH_URL, search_params)
-        if not search_response or not search_response.get("items"): 
-            continue
-
-        new_channel_ids = list({
-            item["snippet"]["channelId"] for item in search_response["items"]
-        } - processed_channel_ids)
-        if not new_channel_ids: 
-            continue
-
-        for batch_start in range(0, len(new_channel_ids), 50):
-            batch_ids = new_channel_ids[batch_start:batch_start + 50]
-            channel_params = {"part": "snippet,statistics", "id": ",".join(batch_ids), "key": api_key}
-            channel_response = fetch_youtube_data(YOUTUBE_CHANNEL_URL, channel_params)
-            if not channel_response or not channel_response.get("items"): 
-                continue
-
-            for channel in channel_response["items"]:
-                published_date = datetime.fromisoformat(channel["snippet"]["publishedAt"].replace("Z", "+00:00"))
-                if published_date.year >= current_year - 1:
-                    stats_data = channel.get("statistics", {})
-                    subs = int(stats_data.get("subscriberCount", 0))
-                    views = int(stats_data.get("viewCount", 0))
-                    video_count = int(stats_data.get("videoCount", 0))
-                    subscriber_velocity = subs / max((datetime.now(published_date.tzinfo) - published_date).days, 1)
-                    view_to_video_ratio = views / max(video_count, 1)
-                    
-                    if (subs > 500 and views > 25000 and 3 < video_count < 200 and 
-                        subscriber_velocity > 5 and view_to_video_ratio > 1000):
-                        
-                        channel_id = channel['id']
-                        analysis_data = perform_advanced_analysis(api_key, channel_id, channel, analysis_depth)
-                        viral_channels.append({
-                            "Channel Name": channel["snippet"]["title"],
-                            "URL": f"https://www.youtube.com/channel/{channel_id}",
-                            "Subscribers": subs,
-                            "Total Views": views,
-                            "Video Count": video_count,
-                            "Creation Date": published_date.strftime("%Y-%m-%d"),
-                            "Channel Age (Days)": (datetime.now(published_date.tzinfo) - published_date).days,
-                            "Found Via Niche": niche,
-                            "Subscriber Velocity": round(subscriber_velocity, 2),
-                            "View-to-Video Ratio": round(view_to_video_ratio, 0),
-                            **analysis_data
-                        })
-                        processed_channel_ids.add(channel_id)
-
-    progress_bar.empty()
-    status_text.empty()
-    if viral_channels:
-        return apply_advanced_ranking(viral_channels)
-    return viral_channels
-
+# --- Main Search Function ---
 def find_channels_with_criteria(api_key, search_params):
     """Find YouTube channels based on user-defined criteria"""
     
+    # Extract search parameters
     keywords = search_params.get('keywords', '')
     channel_type = search_params.get('channel_type', 'Any')
     creation_year = search_params.get('creation_year', None)
     max_channels = search_params.get('max_channels', 50)
     
+    # Optional filters
     description_keyword = search_params.get('description_keyword', '')
     min_subscribers = search_params.get('min_subscribers', 0)
     max_subscribers = search_params.get('max_subscribers', float('inf'))
@@ -411,35 +179,46 @@ def find_channels_with_criteria(api_key, search_params):
     found_channels = []
     processed_channel_ids = set()
     
+    # Progress tracking
     progress_bar = st.progress(0)
     status_text = st.empty()
     
+    # Search for videos first, then extract channels
     search_terms = [term.strip() for term in keywords.split(',') if term.strip()]
     
     for i, term in enumerate(search_terms):
         status_text.text(f"🔍 Searching for: '{term}' ({i + 1}/{len(search_terms)})")
         progress_bar.progress((i + 1) / len(search_terms))
         
+        # Configure search parameters
         search_query_params = {
-            "part": "snippet", "q": term, "type": "video", "order": "relevance",
-            "maxResults": 50, "key": api_key
+            "part": "snippet",
+            "q": term,
+            "type": "video",
+            "order": "relevance",
+            "maxResults": 50,
+            "key": api_key
         }
         
+        # Add video duration filter if specified
         if channel_type == "Short":
             search_query_params['videoDuration'] = 'short'
         elif channel_type == "Long":
             search_query_params['videoDuration'] = 'long'
         
+        # Add creation year filter
         if creation_year and creation_year > 1900:
             start_date = f"{creation_year}-01-01T00:00:00Z"
             end_date = f"{creation_year + 1}-01-01T00:00:00Z"
             search_query_params['publishedAfter'] = start_date
             search_query_params['publishedBefore'] = end_date
         
+        # Search for videos
         search_response = fetch_youtube_data(YOUTUBE_SEARCH_URL, search_query_params)
         if not search_response or not search_response.get("items"):
             continue
         
+        # Extract unique channel IDs
         channel_ids = list(set([
             item["snippet"]["channelId"] 
             for item in search_response["items"] 
@@ -449,19 +228,24 @@ def find_channels_with_criteria(api_key, search_params):
         if not channel_ids:
             continue
         
+        # Get channel details in batches
         for batch_start in range(0, len(channel_ids), 50):
             batch_ids = channel_ids[batch_start:batch_start + 50]
             
             channel_params = {
-                "part": "snippet,statistics", "id": ",".join(batch_ids), "key": api_key
+                "part": "snippet,statistics",
+                "id": ",".join(batch_ids),
+                "key": api_key
             }
             
             channel_response = fetch_youtube_data(YOUTUBE_CHANNEL_URL, channel_params)
             if not channel_response or not channel_response.get("items"):
                 continue
             
+            # Process each channel
             for channel in channel_response["items"]:
                 try:
+                    # Extract channel data
                     snippet = channel.get("snippet", {})
                     stats = channel.get("statistics", {})
                     
@@ -475,6 +259,7 @@ def find_channels_with_criteria(api_key, search_params):
                     total_views = int(stats.get("viewCount", 0))
                     video_count = int(stats.get("videoCount", 0))
                     
+                    # Apply filters
                     if creation_year and published_date.year != creation_year:
                         continue
                     
@@ -487,10 +272,12 @@ def find_channels_with_criteria(api_key, search_params):
                     if description_keyword and description_keyword.lower() not in channel_description.lower():
                         continue
                     
+                    # Calculate additional metrics
                     channel_age_days = (datetime.now(published_date.tzinfo) - published_date).days
                     avg_views_per_video = total_views / max(video_count, 1)
                     subscriber_velocity = subscribers / max(channel_age_days, 1)
                     
+                    # Store channel data
                     channel_data = {
                         "Channel Name": channel_name,
                         "URL": f"https://www.youtube.com/channel/{channel['id']}",
@@ -508,6 +295,7 @@ def find_channels_with_criteria(api_key, search_params):
                     found_channels.append(channel_data)
                     processed_channel_ids.add(channel['id'])
                     
+                    # Stop if we've reached the maximum number of channels
                     if len(found_channels) >= max_channels:
                         break
                         
@@ -525,40 +313,7 @@ def find_channels_with_criteria(api_key, search_params):
     
     return found_channels
 
-def apply_advanced_ranking(channels):
-    """Apply advanced ranking algorithm to channels"""
-    weights = {
-        'subscriber_velocity': 0.25, 'engagement': 0.20, 'viral_potential': 0.20, 
-        'growth_velocity': 0.15, 'consistency': 0.10, 'monetization': 0.10
-    }
-    
-    features = []
-    for ch in channels:
-        features.append([
-            ch.get('Subscriber Velocity', 0), ch.get('Engagement Score', 0), 
-            ch.get('Viral Potential', 0), ch.get('Growth Velocity', 0), 
-            ch.get('Content Consistency', 0), len(ch.get('Monetization Signals', [])) * 10
-        ])
-    
-    if not features: 
-        return channels
-    
-    features_normalized = StandardScaler().fit_transform(features)
-    
-    for i, channel in enumerate(channels):
-        score = np.dot(features_normalized[i], list(weights.values()))
-        channel['Intelligence_Score'] = round(score * 100, 2)
-        if score > 0.8: 
-            channel['Ranking_Tier'] = "🏆 Elite"
-        elif score > 0.6: 
-            channel['Ranking_Tier'] = "🥇 Excellent"
-        elif score > 0.4: 
-            channel['Ranking_Tier'] = "🥈 Good"
-        else: 
-            channel['Ranking_Tier'] = "📈 Emerging"
-            
-    return sorted(channels, key=lambda x: x.get('Intelligence_Score', 0), reverse=True)
-
+# --- Advanced Analysis Function ---
 def perform_advanced_channel_analysis(api_key, channels_data):
     """Perform advanced analysis on found channels"""
     
@@ -575,8 +330,10 @@ def perform_advanced_channel_analysis(api_key, channels_data):
         progress_bar.progress((i + 1) / len(channels_data))
         
         try:
+            # Extract channel ID from URL
             channel_id = channel_data['URL'].split('/')[-1]
             
+            # Get recent videos for analysis
             video_search_params = {
                 "part": "snippet",
                 "channelId": channel_id,
@@ -595,9 +352,10 @@ def perform_advanced_channel_analysis(api_key, channels_data):
                 ]
                 
                 if video_ids:
+                    # Get video statistics
                     video_details_params = {
                         "part": "statistics,snippet,contentDetails",
-                        "id": ",".join(video_ids[:5]),
+                        "id": ",".join(video_ids[:5]),  # Limit to 5 most recent
                         "key": api_key
                     }
                     
@@ -606,6 +364,7 @@ def perform_advanced_channel_analysis(api_key, channels_data):
                     if details_response and details_response.get("items"):
                         videos_data = details_response.get("items", [])
                         
+                        # Calculate engagement metrics
                         total_views = sum([int(v.get("statistics", {}).get("viewCount", 0)) for v in videos_data])
                         total_likes = sum([int(v.get("statistics", {}).get("likeCount", 0)) for v in videos_data])
                         total_comments = sum([int(v.get("statistics", {}).get("commentCount", 0)) for v in videos_data])
@@ -615,6 +374,7 @@ def perform_advanced_channel_analysis(api_key, channels_data):
                         else:
                             engagement_rate = 0
                         
+                        # Add advanced metrics to channel data
                         channel_data["Recent Engagement Rate"] = round(engagement_rate, 3)
                         channel_data["Recent Avg Views"] = round(total_views / len(videos_data), 0)
                         channel_data["Analysis Status"] = "✅ Complete"
@@ -637,113 +397,42 @@ def perform_advanced_channel_analysis(api_key, channels_data):
 
 # --- Main Application UI ---
 
+# Header
 st.markdown("""
 <div class="main-header">
-    <h1>🚀 YouTube Complete Analytics Platform</h1>
-    <h3>Advanced Intelligence Engine for YouTube Success</h3>
-    <p>Comprehensive channel discovery, growth analysis, and viral content research</p>
+    <h1>🔍 YouTube Channel Finder</h1>
+    <h3>Advanced Channel Discovery & Analytics Platform</h3>
+    <p>Find YouTube channels based on your specific criteria with AI-powered analysis</p>
 </div>
 """, unsafe_allow_html=True)
 
 # Sidebar Configuration
 with st.sidebar:
-    st.header("🔧 Configuration Panel")
+    st.header("🔧 API Configuration")
     api_key = st.text_input("YouTube Data API Key:", type="password", help="Get your API key from Google Cloud Console")
-    if api_key: 
+    
+    if api_key:
         st.success("✅ API Key Configured")
-    else: 
+    else:
         st.error("❌ API Key Required")
+        st.info("📝 Get your API key from: https://console.cloud.google.com/")
     
     st.divider()
-    analysis_depth = st.selectbox("Analysis Depth:", ["Quick", "Standard", "Deep"], index=2)
     
-    # API usage tracking
-    if 'api_calls_made' not in st.session_state:
-        st.session_state.api_calls_made = 0
-    
-    st.metric("API Calls Today", st.session_state.api_calls_made)
-    st.progress(min(st.session_state.api_calls_made / 100, 1.0))
+    st.header("⚙️ Search Settings")
+    analysis_mode = st.selectbox(
+        "Analysis Mode:",
+        ["Basic Search", "Advanced Analytics"],
+        help="Choose between quick search or detailed analysis with metrics"
+    )
 
-# Main Tabs
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
-    "🔍 Intelligent Niche Research", 
-    "🔍 Channel Finder", 
-    "🔥 Viral Video Finder",
-    "📈 Growth Trajectory Analysis", 
-    "📊 Results Dashboard"
-])
+# Main Content
+tab1, tab2, tab3 = st.tabs(["🔍 Channel Finder", "📊 Results Analysis", "📈 Growth Insights"])
 
-# Tab 1: Intelligent Niche Research
 with tab1:
-    st.header("🚀 Intelligent Niche Research Engine")
+    st.header("🎯 Channel Search Criteria")
     
-    video_type_choice = st.radio(
-        "Channel Type Focus:", 
-        ('Any Content', 'Shorts-Focused', 'Long-Form Content'), 
-        horizontal=True
-    )
-    
-    suggested_niches = {
-        "AI & Technology": ["AI Tools for Creators", "No-Code SaaS", "Crypto DeFi Explained"],
-        "Personal Development": ["Productivity for ADHD", "Financial Independence", "Minimalist Lifestyle"],
-        "Entertainment": ["Gaming Reviews", "Movie Reactions", "Comedy Skits"],
-        "Education": ["Science Experiments", "History Explained", "Language Learning"],
-    }
-    
-    niche_category = st.selectbox("Choose a Category for Suggestions:", list(suggested_niches.keys()))
-    user_niche_input = st.text_area(
-        "Enter Niche Ideas (one per line):", 
-        "\n".join(suggested_niches[niche_category]), 
-        height=150
-    )
-
-    if st.button("🚀 Launch Intelligent Analysis", type="primary", use_container_width=True):
-        if not api_key:
-            st.error("🔐 Please configure your API key in the sidebar.")
-        else:
-            niche_ideas = [n.strip() for n in user_niche_input.split('\n') if n.strip()]
-            if not niche_ideas:
-                st.warning("⚠️ Please enter at least one niche idea.")
-            else:
-                with st.spinner("🔬 Applying advanced mathematical models..."):
-                    video_type_map = {
-                        'Any Content': 'Any', 
-                        'Shorts-Focused': 'Shorts Channel', 
-                        'Long-Form Content': 'Long Video Channel'
-                    }
-                    st.session_state.niche_results = find_viral_new_channels_enhanced(
-                        api_key, niche_ideas, video_type_map[video_type_choice], analysis_depth
-                    )
-                
-                if st.session_state.niche_results:
-                    st.success(f"🎉 Analysis Complete! Found {len(st.session_state.niche_results)} high-potential channels.")
-                else:
-                    st.warning("🔍 No channels found matching the criteria. Try adjusting your search.")
-
-    # Display niche research results
-    if 'niche_results' in st.session_state and st.session_state.niche_results:
-        st.subheader("🔬 Individual Channel Intelligence Reports")
-        for i, channel in enumerate(st.session_state.niche_results):
-            with st.expander(
-                f"#{i+1} {channel['Channel Name']} • {channel.get('Ranking_Tier', 'Unranked')} • Score: {channel.get('Intelligence_Score', 0):.1f}", 
-                expanded=(i < 3)
-            ):
-                col1, col2, col3 = st.columns(3)
-                col1.metric("Subscribers", f"{channel['Subscribers']:,}")
-                col2.metric("Total Views", f"{channel['Total Views']:,}")
-                col3.metric("Videos", channel['Video Count'])
-                
-                col4, col5, col6 = st.columns(3)
-                col4.metric("Engagement Score", f"{channel.get('Engagement Score', 0):.2f}")
-                col5.metric("Viral Potential", f"{channel.get('Viral Potential', 0):.2f}%")
-                col6.metric("Growth Velocity", f"{channel.get('Growth Velocity', 0):.2f}")
-                
-                st.markdown(f"[🔗 Visit Channel]({channel['URL']})")
-
-# Tab 2: Channel Finder
-with tab2:
-    st.header("🎯 Channel Discovery & Search")
-    
+    # Required Questions
     st.markdown("""
     <div class="question-box">
         <h4>📋 Required Information</h4>
@@ -782,6 +471,7 @@ with tab2:
             help="Maximum number of channels to discover"
         )
     
+    # Optional Questions
     st.markdown("""
     <div class="optional-section">
         <h4>🎛️ Optional Filters (Press Enter to skip)</h4>
@@ -826,13 +516,17 @@ with tab2:
             value=10000,
             help="Maximum video count filter"
         )
-
+    
+    # Search Button
+    st.divider()
+    
     if st.button("🚀 Start Channel Discovery", type="primary", use_container_width=True):
         if not api_key:
             st.error("🔐 Please configure your YouTube API key in the sidebar first!")
         elif not keywords:
             st.error("🔤 Please enter at least one keyword to search for!")
         else:
+            # Prepare search parameters
             search_params = {
                 'keywords': keywords,
                 'channel_type': channel_type,
@@ -845,17 +539,21 @@ with tab2:
                 'max_videos': max_videos
             }
             
+            # Start search
             with st.spinner("🔍 Searching for channels..."):
                 channels = find_channels_with_criteria(api_key, search_params)
             
             if channels:
-                if analysis_depth == "Advanced Analytics":
+                # Perform advanced analysis if selected
+                if analysis_mode == "Advanced Analytics":
                     with st.spinner("🧠 Performing advanced analysis..."):
                         channels = perform_advanced_channel_analysis(api_key, channels)
                 
-                st.session_state.channel_finder_results = channels
+                st.session_state.found_channels = channels
                 st.success(f"🎉 Discovery complete! Found {len(channels)} channels matching your criteria.")
                 
+                # Show quick preview
+                st.subheader("📋 Quick Preview")
                 preview_df = pd.DataFrame(channels)
                 st.dataframe(
                     preview_df[['Channel Name', 'Subscribers', 'Video Count', 'Creation Date']].head(10),
@@ -864,13 +562,48 @@ with tab2:
             else:
                 st.warning("😔 No channels found matching your criteria. Try adjusting your filters.")
 
-    # Display channel finder results
-    if 'channel_finder_results' in st.session_state and st.session_state.channel_finder_results:
-        st.subheader("📊 Channel Discovery Results")
-        channels_data = st.session_state.channel_finder_results
+with tab2:
+    st.header("📊 Detailed Results Analysis")
+    
+    if 'found_channels' in st.session_state and st.session_state.found_channels:
+        channels_data = st.session_state.found_channels
         
-        for i, channel in enumerate(channels_data[:20]):  # Show first 20
-            with st.expander(f"#{i+1} {channel['Channel Name']} • {format_number(channel['Subscribers'])} subscribers"):
+        # Summary Statistics
+        st.subheader("📈 Summary Statistics")
+        
+        col1, col2, col3, col4 = st.columns(4)
+        
+        total_channels = len(channels_data)
+        total_subscribers = sum([ch['Subscribers'] for ch in channels_data])
+        total_videos = sum([ch['Video Count'] for ch in channels_data])
+        avg_age = sum([ch['Channel Age (Days)'] for ch in channels_data]) / total_channels
+        
+        col1.metric("Total Channels", total_channels)
+        col2.metric("Combined Subscribers", format_number(total_subscribers))
+        col3.metric("Combined Videos", format_number(total_videos))
+        col4.metric("Avg Channel Age", f"{int(avg_age)} days")
+        
+        # Individual Channel Cards
+        st.subheader("🎯 Individual Channel Details")
+        
+        # Sort options
+        sort_option = st.selectbox(
+            "Sort by:",
+            ["Subscribers", "Total Views", "Video Count", "Channel Age (Days)", "Creation Date"]
+        )
+        
+        # Sort the channels
+        sorted_channels = sorted(
+            channels_data, 
+            key=lambda x: x.get(sort_option, 0), 
+            reverse=True
+        )
+        
+        # Display channels in expandable cards
+        for i, channel in enumerate(sorted_channels):
+            with st.expander(f"#{i+1} {channel['Channel Name']} • {format_number(channel['Subscribers'])} subscribers", expanded=(i < 3)):
+                
+                # Basic metrics
                 col1, col2, col3 = st.columns(3)
                 col1.metric("📊 Subscribers", format_number(channel['Subscribers']))
                 col2.metric("👀 Total Views", format_number(channel['Total Views']))
@@ -881,327 +614,227 @@ with tab2:
                 col5.metric("⏱️ Age", f"{channel['Channel Age (Days)']} days")
                 col6.metric("🔍 Found via", channel['Found Via Keyword'])
                 
+                # Advanced metrics if available
                 if 'Recent Engagement Rate' in channel:
-                    col7, col8 = st.columns(2)
+                    col7, col8, col9 = st.columns(3)
                     col7.metric("💝 Engagement Rate", f"{channel.get('Recent Engagement Rate', 0):.3f}%")
                     col8.metric("📈 Recent Avg Views", format_number(channel.get('Recent Avg Views', 0)))
+                    col9.metric("🔬 Analysis", channel.get('Analysis Status', 'N/A'))
                 
+                # Channel description
                 if channel.get('Description'):
-                    st.text_area("📝 Description:", channel['Description'], height=80, key=f"desc_finder_{i}")
+                    st.text_area("📝 Description:", channel['Description'], height=100, key=f"desc_{i}")
                 
-                st.markdown(f"[🔗 Visit Channel]({channel['URL']})")
-
-# Tab 3: Viral Video Finder
-with tab3:
-    st.header("🔥 Viral Video Discovery Engine")
-    
-    col1, col2 = st.columns(2)
-    with col1:
-        days = st.number_input("📅 Days to search back (1-30):", min_value=1, max_value=30, value=7)
-    with col2:
-        max_subs = st.number_input("👥 Max channel subscribers:", min_value=100, max_value=10000, value=3000)
-    
-    keywords = st.text_area(
-        "🔤 Enter Keywords (one per line):",
-        "AI tutorial\nCoding for beginners\nProductivity hacks\nMinecraft builds",
-        height=120
-    )
-
-    if st.button("🔍 Find Viral Videos", type="primary", use_container_width=True):
-        if not api_key:
-            st.error("🔐 Please configure your API key in the sidebar.")
-        else:
-            keyword_list = [k.strip() for k in keywords.split('\n') if k.strip()]
-            if not keyword_list:
-                st.warning("⚠️ Please enter at least one keyword.")
-            else:
-                with st.spinner("🔍 Searching for viral videos..."):
-                    start_date = (datetime.utcnow() - timedelta(days=int(days))).isoformat("T") + "Z"
-                    all_results = []
-                    
-                    progress_bar = st.progress(0)
-                    status_text = st.empty()
-                    
-                    for i, keyword in enumerate(keyword_list):
-                        status_text.text(f"🔍 Searching for: {keyword}")
-                        progress_bar.progress((i + 1) / len(keyword_list))
-                        
-                        search_params = {
-                            "part": "snippet",
-                            "q": keyword,
-                            "type": "video",
-                            "order": "viewCount",
-                            "publishedAfter": start_date,
-                            "maxResults": 10,
-                            "key": api_key,
-                        }
-                        
-                        search_response = fetch_youtube_data(YOUTUBE_SEARCH_URL, search_params)
-                        if not search_response or not search_response.get("items"):
-                            continue
-                        
-                        videos = search_response["items"]
-                        video_ids = [v["id"]["videoId"] for v in videos if "id" in v and "videoId" in v["id"]]
-                        channel_ids = [v["snippet"]["channelId"] for v in videos if "snippet" in v]
-                        
-                        if not video_ids or not channel_ids:
-                            continue
-                        
-                        # Get video statistics
-                        stats_params = {"part": "statistics", "id": ",".join(video_ids), "key": api_key}
-                        stats_response = fetch_youtube_data(YOUTUBE_VIDEO_URL, stats_params)
-                        if not stats_response or not stats_response.get("items"):
-                            continue
-                        
-                        # Get channel statistics
-                        channel_params = {"part": "statistics", "id": ",".join(set(channel_ids)), "key": api_key}
-                        channel_response = fetch_youtube_data(YOUTUBE_CHANNEL_URL, channel_params)
-                        if not channel_response or not channel_response.get("items"):
-                            continue
-                        
-                        # Create channel lookup
-                        channel_lookup = {ch["id"]: ch for ch in channel_response["items"]}
-                        
-                        # Process results
-                        for video, stat in zip(videos, stats_response["items"]):
-                            channel_id = video["snippet"]["channelId"]
-                            channel_data = channel_lookup.get(channel_id)
-                            
-                            if not channel_data:
-                                continue
-                                
-                            subs = int(channel_data["statistics"].get("subscriberCount", 0))
-                            if subs <= max_subs:
-                                title = video["snippet"].get("title", "N/A")
-                                description = video["snippet"].get("description", "")[:200]
-                                video_url = f"https://www.youtube.com/watch?v={video['id']['videoId']}"
-                                views = int(stat["statistics"].get("viewCount", 0))
-                                
-                                all_results.append({
-                                    "Title": title,
-                                    "Description": description,
-                                    "URL": video_url,
-                                    "Views": views,
-                                    "Subscribers": subs,
-                                    "Keyword": keyword
-                                })
-                    
-                    progress_bar.empty()
-                    status_text.empty()
-                    
-                    if all_results:
-                        st.session_state.viral_results = all_results
-                        st.success(f"🎉 Found {len(all_results)} viral videos from small channels!")
-                        
-                        # Display top results
-                        sorted_results = sorted(all_results, key=lambda x: x['Views'], reverse=True)
-                        for i, result in enumerate(sorted_results[:15]):
-                            with st.expander(f"#{i+1} {result['Title'][:60]}... • {format_number(result['Views'])} views"):
-                                st.write(f"**👥 Channel Subscribers:** {format_number(result['Subscribers'])}")
-                                st.write(f"**👀 Views:** {format_number(result['Views'])}")
-                                st.write(f"**🔍 Found via:** {result['Keyword']}")
-                                st.write(f"**📝 Description:** {result['Description']}")
-                                st.markdown(f"[🔗 Watch Video]({result['URL']})")
-                    else:
-                        st.warning("😔 No viral videos found matching your criteria.")
-
-# Tab 4: Growth Trajectory Analysis
-with tab4:
-    st.header("📈 Growth Trajectory Analysis")
-    
-    # Combine all results for comprehensive analysis
-    all_results = []
-    if 'niche_results' in st.session_state and st.session_state.niche_results:
-        all_results.extend(st.session_state.niche_results)
-    if 'channel_finder_results' in st.session_state and st.session_state.channel_finder_results:
-        all_results.extend(st.session_state.channel_finder_results)
-    
-    if all_results:
-        df_combined = pd.DataFrame(all_results)
+                # Channel link
+                st.markdown(f"🔗 **[Visit Channel]({channel['URL']})**")
         
-        # Growth velocity vs acceleration scatter plot
-        if 'Growth Velocity' in df_combined.columns and 'Growth Acceleration' in df_combined.columns:
-            fig_growth = px.scatter(
-                df_combined,
-                x='Growth Velocity',
-                y='Growth Acceleration',
-                size='Subscribers',
-                color='Intelligence_Score' if 'Intelligence_Score' in df_combined.columns else 'Total Views',
-                hover_name='Channel Name',
-                title="📊 Growth Dynamics Analysis",
-                labels={'Growth Velocity': 'Growth Velocity (daily)', 'Growth Acceleration': 'Growth Acceleration'}
+        # Export options
+        st.subheader("💾 Export Results")
+        
+        # Convert to DataFrame for export
+        export_df = pd.DataFrame(channels_data)
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            csv = export_df.to_csv(index=False)
+            st.download_button(
+                label="📄 Download as CSV",
+                data=csv,
+                file_name=f"youtube_channels_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                mime="text/csv"
             )
-            st.plotly_chart(fig_growth, use_container_width=True)
         
-        # Subscriber distribution
+        with col2:
+            json_str = export_df.to_json(orient='records', indent=2)
+            st.download_button(
+                label="📋 Download as JSON",
+                data=json_str,
+                file_name=f"youtube_channels_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+                mime="application/json"
+            )
+    
+    else:
+        st.info("📋 Run a channel search first to see detailed results here.")
+
+with tab3:
+    st.header("📈 Growth & Performance Insights")
+    
+    if 'found_channels' in st.session_state and st.session_state.found_channels:
+        channels_data = st.session_state.found_channels
+        df = pd.DataFrame(channels_data)
+        
+        # Growth Analysis Charts
+        st.subheader("📊 Visual Analytics")
+        
+        # Subscriber Distribution
         fig_subs = px.histogram(
-            df_combined,
-            x='Subscribers',
-            nbins=30,
-            title="📈 Subscriber Distribution Across All Found Channels",
+            df, 
+            x='Subscribers', 
+            nbins=20,
+            title="📈 Subscriber Distribution",
             labels={'Subscribers': 'Subscriber Count', 'count': 'Number of Channels'}
         )
         st.plotly_chart(fig_subs, use_container_width=True)
         
-        # Views vs Subscribers correlation
-        fig_correlation = px.scatter(
-            df_combined,
-            x='Subscribers',
-            y='Total Views',
-            size='Video Count',
-            hover_name='Channel Name',
-            title="👀 Views vs Subscribers Analysis",
-            labels={'Subscribers': 'Subscriber Count', 'Total Views': 'Total View Count'}
+        # Views vs Subscribers Scatter
+        if len(df) > 1:
+            fig_scatter = px.scatter(
+                df,
+                x='Subscribers',
+                y='Total Views',
+                size='Video Count',
+                hover_name='Channel Name',
+                title="👀 Views vs Subscribers Analysis",
+                labels={'Subscribers': 'Subscriber Count', 'Total Views': 'Total View Count'}
+            )
+            st.plotly_chart(fig_scatter, use_container_width=True)
+        
+        # Channel Age Analysis
+        fig_age = px.bar(
+            df.head(20),  # Top 20 channels
+            x='Channel Name',
+            y='Channel Age (Days)',
+            title="⏰ Channel Age Analysis (Top 20 Channels)",
+            labels={'Channel Age (Days)': 'Age in Days', 'Channel Name': 'Channel'}
         )
-        st.plotly_chart(fig_correlation, use_container_width=True)
+        fig_age.update_xaxis(tickangle=45)
+        st.plotly_chart(fig_age, use_container_width=True)
         
-        # Top performers summary
-        st.subheader("🏆 Top Performing Channels")
+        # Performance Insights
+        st.subheader("🎯 Key Insights")
         
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            st.write("**👑 Most Subscribers:**")
-            top_subs = df_combined.nlargest(5, 'Subscribers')[['Channel Name', 'Subscribers']]
-            for _, row in top_subs.iterrows():
-                st.write(f"• {row['Channel Name']}: {format_number(row['Subscribers'])}")
-        
-        with col2:
-            st.write("**👀 Most Views:**")
-            top_views = df_combined.nlargest(5, 'Total Views')[['Channel Name', 'Total Views']]
-            for _, row in top_views.iterrows():
-                st.write(f"• {row['Channel Name']}: {format_number(row['Total Views'])}")
-        
-        with col3:
-            st.write("**🆕 Newest Channels:**")
-            df_combined['Channel Age (Days)'] = pd.to_numeric(df_combined['Channel Age (Days)'], errors='coerce')
-            newest = df_combined.nsmallest(5, 'Channel Age (Days)')[['Channel Name', 'Channel Age (Days)']]
-            for _, row in newest.iterrows():
-                st.write(f"• {row['Channel Name']}: {int(row['Channel Age (Days)'])} days")
-        
-    else:
-        st.info("📊 Run analysis in other tabs first to see growth trajectory data.")
-
-# Tab 5: Results Dashboard
-with tab5:
-    st.header("📊 Comprehensive Results Dashboard")
-    
-    # Summary metrics
-    col1, col2, col3, col4 = st.columns(4)
-    
-    niche_count = len(st.session_state.get('niche_results', []))
-    channel_count = len(st.session_state.get('channel_finder_results', []))
-    viral_count = len(st.session_state.get('viral_results', []))
-    total_channels = niche_count + channel_count
-    
-    col1.metric("🔬 Niche Research Channels", niche_count)
-    col2.metric("🔍 Channel Finder Results", channel_count)
-    col3.metric("🔥 Viral Videos Found", viral_count)
-    col4.metric("📊 Total Channels Analyzed", total_channels)
-    
-    # Export all results
-    if total_channels > 0 or viral_count > 0:
-        st.subheader("💾 Export All Results")
+        # Calculate insights
+        top_performer = max(channels_data, key=lambda x: x['Subscribers'])
+        fastest_growing = min(channels_data, key=lambda x: x['Channel Age (Days)'])
+        most_productive = max(channels_data, key=lambda x: x['Video Count'])
         
         col1, col2, col3 = st.columns(3)
         
         with col1:
-            if st.button("📄 Download Channel Data as CSV", use_container_width=True):
-                all_channel_data = []
-                if 'niche_results' in st.session_state:
-                    all_channel_data.extend(st.session_state.niche_results)
-                if 'channel_finder_results' in st.session_state:
-                    all_channel_data.extend(st.session_state.channel_finder_results)
-                
-                if all_channel_data:
-                    df_export = pd.DataFrame(all_channel_data)
-                    csv = df_export.to_csv(index=False)
-                    st.download_button(
-                        label="📥 Download CSV",
-                        data=csv,
-                        file_name=f"youtube_channels_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-                        mime="text/csv"
-                    )
-        
-        with col2:
-            if st.button("🎬 Download Viral Videos as CSV", use_container_width=True):
-                if 'viral_results' in st.session_state:
-                    df_viral = pd.DataFrame(st.session_state.viral_results)
-                    csv_viral = df_viral.to_csv(index=False)
-                    st.download_button(
-                        label="📥 Download Viral CSV",
-                        data=csv_viral,
-                        file_name=f"viral_videos_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-                        mime="text/csv"
-                    )
-        
-        with col3:
-            if st.button("📋 Download Complete Report", use_container_width=True):
-                # Create comprehensive report
-                report_data = {
-                    'summary': {
-                        'niche_channels': niche_count,
-                        'found_channels': channel_count,
-                        'viral_videos': viral_count,
-                        'total_channels': total_channels,
-                        'generated_at': datetime.now().isoformat()
-                    }
-                }
-                
-                if 'niche_results' in st.session_state:
-                    report_data['niche_research'] = st.session_state.niche_results
-                if 'channel_finder_results' in st.session_state:
-                    report_data['channel_finder'] = st.session_state.channel_finder_results
-                if 'viral_results' in st.session_state:
-                    report_data['viral_videos'] = st.session_state.viral_results
-                
-                import json
-                json_str = json.dumps(report_data, indent=2, default=str)
-                st.download_button(
-                    label="📥 Download JSON Report",
-                    data=json_str,
-                    file_name=f"youtube_complete_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
-                    mime="application/json"
-                )
-        
-        # Network analysis if we have multiple channels
-        if total_channels > 5:
-            st.subheader("🌐 Network Analysis")
+            st.markdown(f"""
+            **🏆 Top Performer**
             
-            try:
-                # Combine all channel data
-                all_channels = []
-                if 'niche_results' in st.session_state:
-                    all_channels.extend(st.session_state.niche_results)
-                if 'channel_finder_results' in st.session_state:
-                    all_channels.extend(st.session_state.channel_finder_results)
+            **{top_performer['Channel Name']}**
+            - {format_number(top_performer['Subscribers'])} subscribers
+            - {top_performer['Video Count']} videos
+            - Created: {top_performer['Creation Date']}
+            """)
+        
+        with col2:
+            st.markdown(f"""
+            **⚡ Newest Channel**
+            
+            **{fastest_growing['Channel Name']}**
+            - {fastest_growing['Channel Age (Days)']} days old
+            - {format_number(fastest_growing['Subscribers'])} subscribers
+            - Created: {fastest_growing['Creation Date']}
+            """)
+        
+        with col3:
+            st.markdown(f"""
+            **🎬 Most Productive**
+            
+            **{most_productive['Channel Name']}**
+            - {most_productive['Video Count']} videos
+            - {format_number(most_productive['Subscribers'])} subscribers
+            - Created: {most_productive['Creation Date']}
+            """)
+        
+        # Advanced Analytics (if available)
+        if any('Recent Engagement Rate' in ch for ch in channels_data):
+            st.subheader("🧠 Advanced Analytics")
+            
+            # Filter channels with advanced data
+            advanced_channels = [ch for ch in channels_data if 'Recent Engagement Rate' in ch]
+            if advanced_channels:
+                advanced_df = pd.DataFrame(advanced_channels)
                 
-                # Build network
-                network_analyzer = NetworkAnalyzer()
-                G = network_analyzer.build_topic_network(all_channels)
-                
-                if G.number_of_nodes() > 0:
-                    # Calculate network metrics
-                    centrality_scores = {}
-                    for node in G.nodes():
-                        centrality_scores[node] = network_analyzer.calculate_network_centrality(G, node)
-                    
-                    # Display top influential channels
-                    st.write("**🏆 Most Influential Channels in Network:**")
-                    sorted_influence = sorted(
-                        centrality_scores.items(), 
-                        key=lambda x: x[1]['influence_score'], 
-                        reverse=True
-                    )
-                    
-                    for i, (channel, scores) in enumerate(sorted_influence[:10]):
-                        st.write(f"{i+1}. {channel} - Influence Score: {scores['influence_score']:.3f}")
-                
-            except Exception as e:
-                st.info("🌐 Network analysis requires additional data processing.")
+                # Engagement Rate Analysis
+                fig_engagement = px.bar(
+                    advanced_df.head(15),
+                    x='Channel Name',
+                    y='Recent Engagement Rate',
+                    title="💝 Recent Engagement Rate Analysis",
+                    labels={'Recent Engagement Rate': 'Engagement Rate (%)', 'Channel Name': 'Channel'}
+                )
+                fig_engagement.update_xaxis(tickangle=45)
+                st.plotly_chart(fig_engagement, use_container_width=True)
     
     else:
-        st.info("📊 Run analyses in other tabs to see comprehensive dashboard results.")
+        st.info("📈 Run a channel search first to see growth insights.")
+
+# Footer
+st.markdown("---")
+st.markdown("""
+<div style="text-align: center; color: #666; padding: 20px;">
+    <h4>📝 Application Description</h4>
+    <p>This advanced YouTube Channel Finder helps you discover channels based on specific criteria like keywords, creation year, subscriber count, and video count. It combines intelligent search algorithms with comprehensive analytics to provide deep insights into channel performance, growth patterns, and engagement metrics. Perfect for content creators, marketers, and researchers looking to discover trending channels and analyze YouTube ecosystem dynamics.</p>
+    <br>
+    <p><strong>🚀 Features:</strong> Smart channel discovery • Advanced analytics • Growth tracking • Engagement analysis • Export capabilities • Real-time data visualization</p>
+    <p><em>Powered by YouTube Data API v3 and advanced mathematical models for growth intelligence</em></p>
+</div>
+""", unsafe_allow_html=True)
+
+# Additional Features Section
+st.markdown("---")
+st.header("🔧 Additional Tools & Features")
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    with st.expander("🎯 Search Tips"):
+        st.markdown("""
+        **Effective Search Strategies:**
+        
+        • Use specific, relevant keywords
+        • Combine multiple related terms with commas
+        • Try different year ranges to find emerging channels
+        • Adjust subscriber limits to find your target audience size
+        • Use description keywords to filter by niche topics
+        
+        **Examples:**
+        - "AI tutorial, machine learning, python coding"
+        - "cooking recipes, healthy meals, quick dinner"
+        - "gaming review, indie games, retro gaming"
+        """)
+
+with col2:
+    with st.expander("📊 Understanding Metrics"):
+        st.markdown("""
+        **Key Metrics Explained:**
+        
+        • **Subscribers**: Total channel followers
+        • **Total Views**: Cumulative views across all videos
+        • **Video Count**: Number of uploaded videos
+        • **Engagement Rate**: (Likes + Comments) / Views ratio
+        • **Subscriber Velocity**: Subscribers gained per day
+        • **Channel Age**: Days since channel creation
+        
+        **Growth Indicators:**
+        - High engagement rate = Active audience
+        - High subscriber velocity = Fast growing
+        - Good view-to-video ratio = Consistent quality
+        """)
+
+with col3:
+    with st.expander("🔗 API Setup Guide"):
+        st.markdown("""
+        **Getting Your YouTube API Key:**
+        
+        1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+        2. Create a new project or select existing
+        3. Enable YouTube Data API v3
+        4. Create credentials (API Key)
+        5. Copy and paste the key in sidebar
+        
+        **API Limits:**
+        - 10,000 requests per day (free tier)
+        - Each search uses ~3-5 quota units
+        - Channel details use ~1 quota unit
+        
+        **Cost:** Free up to daily quota limit
+        """)
 
 # Quick Actions Section
 st.markdown("---")
@@ -1211,81 +844,134 @@ col1, col2, col3, col4 = st.columns(4)
 
 with col1:
     if st.button("🔥 Find Viral Channels", use_container_width=True):
-        all_channels = []
-        if 'niche_results' in st.session_state:
-            all_channels.extend(st.session_state.niche_results)
-        if 'channel_finder_results' in st.session_state:
-            all_channels.extend(st.session_state.channel_finder_results)
-        
-        if all_channels:
-            viral_channels = [ch for ch in all_channels if ch['Total Views'] > ch['Subscribers'] * 100]
+        if 'found_channels' in st.session_state:
+            viral_channels = [ch for ch in st.session_state.found_channels if ch['Total Views'] > ch['Subscribers'] * 100]
             if viral_channels:
-                st.success(f"🔥 Found {len(viral_channels)} potentially viral channels!")
+                st.success(f"Found {len(viral_channels)} potentially viral channels!")
                 for ch in viral_channels[:5]:
-                    st.write(f"• {ch['Channel Name']}: {format_number(ch['Subscribers'])} subs")
+                    st.write(f"🔥 {ch['Channel Name']} - {format_number(ch['Subscribers'])} subs")
             else:
-                st.info("No viral patterns detected in current results")
+                st.info("Run a search first to find viral channels")
         else:
             st.info("Run a search first!")
 
 with col2:
     if st.button("🆕 Newest Channels", use_container_width=True):
-        all_channels = []
-        if 'niche_results' in st.session_state:
-            all_channels.extend(st.session_state.niche_results)
-        if 'channel_finder_results' in st.session_state:
-            all_channels.extend(st.session_state.channel_finder_results)
-        
-        if all_channels:
-            newest = sorted(all_channels, key=lambda x: x['Channel Age (Days)'])[:5]
-            st.success("🆕 Top 5 Newest Channels:")
+        if 'found_channels' in st.session_state:
+            newest = sorted(st.session_state.found_channels, key=lambda x: x['Channel Age (Days)'])[:5]
+            st.success("Top 5 Newest Channels:")
             for ch in newest:
-                st.write(f"• {ch['Channel Name']}: {ch['Channel Age (Days)']} days old")
+                st.write(f"🆕 {ch['Channel Name']} - {ch['Channel Age (Days)']} days old")
         else:
             st.info("Run a search first!")
 
 with col3:
     if st.button("📈 Fast Growing", use_container_width=True):
-        all_channels = []
-        if 'niche_results' in st.session_state:
-            all_channels.extend(st.session_state.niche_results)
-        if 'channel_finder_results' in st.session_state:
-            all_channels.extend(st.session_state.channel_finder_results)
-        
-        if all_channels:
-            fast_growing = sorted(all_channels, key=lambda x: x.get('Subscriber Velocity', 0), reverse=True)[:5]
-            st.success("📈 Top 5 Fast Growing:")
+        if 'found_channels' in st.session_state:
+            fast_growing = sorted(st.session_state.found_channels, key=lambda x: x.get('Subscriber Velocity', 0), reverse=True)[:5]
+            st.success("Top 5 Fast Growing:")
             for ch in fast_growing:
-                st.write(f"• {ch['Channel Name']}: {ch.get('Subscriber Velocity', 0):.2f}/day")
+                st.write(f"📈 {ch['Channel Name']} - {ch.get('Subscriber Velocity', 0):.2f}/day")
         else:
             st.info("Run a search first!")
 
 with col4:
     if st.button("🎬 Most Active", use_container_width=True):
-        all_channels = []
-        if 'niche_results' in st.session_state:
-            all_channels.extend(st.session_state.niche_results)
-        if 'channel_finder_results' in st.session_state:
-            all_channels.extend(st.session_state.channel_finder_results)
-        
-        if all_channels:
-            most_active = sorted(all_channels, key=lambda x: x['Video Count'], reverse=True)[:5]
-            st.success("🎬 Top 5 Most Active:")
+        if 'found_channels' in st.session_state:
+            most_active = sorted(st.session_state.found_channels, key=lambda x: x['Video Count'], reverse=True)[:5]
+            st.success("Top 5 Most Active:")
             for ch in most_active:
-                st.write(f"• {ch['Channel Name']}: {ch['Video Count']} videos")
+                st.write(f"🎬 {ch['Channel Name']} - {ch['Video Count']} videos")
         else:
             st.info("Run a search first!")
 
-# Footer
+# Settings and Configuration
+with st.sidebar:
+    st.markdown("---")
+    st.header("🛠️ Advanced Settings")
+    
+    # Cache management
+    if st.button("🗑️ Clear Cache", help="Clear cached API responses"):
+        st.cache_data.clear()
+        st.success("Cache cleared!")
+    
+    # Data export format
+    export_format = st.selectbox(
+        "Default Export Format:",
+        ["CSV", "JSON", "Excel"],
+        help="Choose default format for data exports"
+    )
+    
+    # Display options
+    show_advanced_metrics = st.checkbox(
+        "Show Advanced Metrics",
+        value=True,
+        help="Display engagement rates and growth analytics"
+    )
+    
+    # Search limits
+    st.subheader("🔢 Search Limits")
+    default_max_results = st.slider(
+        "Default Max Channels:",
+        min_value=10,
+        max_value=200,
+        value=50,
+        help="Default maximum channels to find"
+    )
+    
+    # API usage tracking
+    st.subheader("📊 API Usage")
+    if 'api_calls_made' not in st.session_state:
+        st.session_state.api_calls_made = 0
+    
+    st.metric("API Calls Today", st.session_state.api_calls_made)
+    st.progress(min(st.session_state.api_calls_made / 100, 1.0))  # Assume 100 calls per day limit for display
+    
+    if st.session_state.api_calls_made > 80:
+        st.warning("⚠️ Approaching API limit!")
+    
+    # Help and support
+    st.markdown("---")
+    st.subheader("❓ Help & Support")
+    
+    with st.expander("📚 Documentation"):
+        st.markdown("""
+        **Common Issues:**
+        
+        • **No results found**: Try broader keywords or adjust filters
+        • **API errors**: Check your API key and quota limits
+        • **Slow searches**: Reduce max channels or use basic mode
+        • **Missing data**: Some channels may have private statistics
+        
+        **Best Practices:**
+        
+        • Start with broad searches, then refine
+        • Use specific niches for targeted results
+        • Check channel creation dates for trends
+        • Export data for further analysis
+        """)
+    
+    with st.expander("🔧 Troubleshooting"):
+        st.markdown("""
+        **If something goes wrong:**
+        
+        1. **Refresh the page** - Clears temporary issues
+        2. **Check API key** - Ensure it's valid and has quota
+        3. **Clear cache** - Use the button above
+        4. **Reduce search scope** - Lower max channels
+        5. **Try different keywords** - Some terms may be restricted
+        
+        **Error Codes:**
+        - 403: API key issue or quota exceeded
+        - 400: Invalid search parameters
+        - 404: Channel not found or deleted
+        """)
+
+# Version and Updates
 st.markdown("---")
 st.markdown("""
-<div style="text-align: center; color: #666; padding: 20px;">
-    <h4>🚀 Complete YouTube Analytics Platform</h4>
-    <p>This comprehensive platform combines intelligent niche research, advanced channel discovery, 
-    viral video detection, and growth trajectory analysis. It uses mathematical models and machine 
-    learning algorithms to provide deep insights into YouTube ecosystem dynamics.</p>
-    <br>
-    <p><strong>✨ Features:</strong> Niche Research • Channel Discovery • Viral Video Detection • Growth Analysis • Network Mapping • Advanced Analytics</p>
-    <p><em>Powered by YouTube Data API v3, advanced mathematical models, and AI-driven intelligence</em></p>
+<div style="text-align: center; color: #888; font-size: 0.8em;">
+    <p>YouTube Channel Finder v2.0 | Built with Streamlit & YouTube Data API v3</p>
+    <p>Last Updated: September 2025 | © 2025 Advanced Analytics Platform</p>
 </div>
 """, unsafe_allow_html=True)
