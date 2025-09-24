@@ -37,6 +37,7 @@ st.set_page_config(
 # --- Custom CSS ---
 st.markdown("""
 <style>
+    /* Base Styles */
     .main-header {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         padding: 30px;
@@ -44,65 +45,277 @@ st.markdown("""
         margin-bottom: 30px;
         text-align: center;
         color: white;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
     }
+    
     .metric-card {
-        background-color: #f0f2f6;
-        border-radius: 10px;
-        padding: 15px;
-        margin: 10px;
-        border-left: 5px solid #4CAF50;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    }
-    .prediction-box {
-        background-color: #e8f5e8;
-        border-radius: 10px;
-        padding: 20px;
-        margin: 15px 0;
-        border: 2px solid #4CAF50;
-    }
-    .question-box {
-        background-color: #f8f9fa;
-        border-radius: 10px;
-        padding: 20px;
-        margin: 15px 0;
-        border-left: 5px solid #007bff;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        color: black; /* Text color changed to black */
-    }
-    .result-card {
-        background-color: #ffffff;
+        background: linear-gradient(145deg, #ffffff, #f0f2f6);
         border-radius: 12px;
         padding: 20px;
         margin: 10px 0;
-        border: 1px solid #e0e0e0;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        border-left: 5px solid #4CAF50;
+        box-shadow: 0 6px 15px rgba(0,0,0,0.08);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
-    .optional-section {
-        background-color: #fff3cd;
-        border: 1px solid #ffeaa7;
-        border-radius: 8px;
-        padding: 15px;
+    
+    .metric-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 25px rgba(0,0,0,0.15);
+    }
+    
+    .prediction-box {
+        background: linear-gradient(145deg, #e8f5e8, #d4edda);
+        border-radius: 12px;
+        padding: 25px;
+        margin: 20px 0;
+        border: 2px solid #28a745;
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.2);
+    }
+    
+    .question-box {
+        background: linear-gradient(145deg, #f8f9fa, #e9ecef);
+        border-radius: 12px;
+        padding: 25px;
+        margin: 20px 0;
+        border-left: 5px solid #007bff;
+        box-shadow: 0 4px 15px rgba(0,123,255,0.1);
+        color: #212529;
+    }
+    
+    .result-card {
+        background: linear-gradient(145deg, #ffffff, #f8f9fa);
+        border-radius: 15px;
+        padding: 25px;
         margin: 15px 0;
+        border: 1px solid #e0e0e0;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
     }
+    
+    .result-card:hover {
+        box-shadow: 0 12px 35px rgba(0,0,0,0.15);
+        transform: translateY(-2px);
+    }
+    
+    .optional-section {
+        background: linear-gradient(145deg, #fff3cd, #ffeaa7);
+        border: 1px solid #ffd700;
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+        box-shadow: 0 4px 15px rgba(255, 193, 7, 0.2);
+    }
+    
     .einstein-quote {
         font-style: italic;
-        color: #666;
-        border-left: 3px solid #2196F3;
-        padding-left: 15px;
-        margin: 20px 0;
+        color: #6c757d;
+        border-left: 4px solid #2196F3;
+        padding-left: 20px;
+        margin: 25px 0;
+        background: linear-gradient(145deg, #f8f9fa, #e9ecef);
+        padding: 15px;
+        border-radius: 0 10px 10px 0;
+    }
+    
+    /* Tab Styling */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        height: 50px;
+        white-space: pre-wrap;
+        background-color: #f8f9fa;
+        border-radius: 8px 8px 0 0;
+        gap: 8px;
+        padding: 10px 20px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .stTabs [aria-selected="true"] {
+        background-color: #007bff;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,123,255,0.3);
+    }
+    
+    /* Button Enhancements */
+    .stButton button {
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border: none;
+    }
+    
+    .stButton button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    }
+    
+    /* Input Styling */
+    .stTextInput input, .stTextArea textarea, .stNumberInput input {
+        border-radius: 8px;
+        border: 2px solid #e0e0e0;
+        transition: all 0.3s ease;
+    }
+    
+    .stTextInput input:focus, .stTextArea textarea:focus, .stNumberInput input:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
+    }
+    
+    /* Sidebar Enhancements */
+    .css-1d391kg {
+        background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
+    }
+    
+    /* Progress Bar Styling */
+    .stProgress > div > div {
+        background: linear-gradient(90deg, #007bff, #0056b3);
+        border-radius: 10px;
+    }
+    
+    /* Expander Styling */
+    .streamlit-expanderHeader {
+        font-weight: 600;
+        background: linear-gradient(145deg, #f8f9fa, #e9ecef);
+        border-radius: 8px;
+        padding: 15px;
+        margin: 5px 0;
+        transition: all 0.3s ease;
+    }
+    
+    .streamlit-expanderHeader:hover {
+        background: linear-gradient(145deg, #e9ecef, #dee2e6);
+        transform: translateX(5px);
     }
 
-    /* Responsive Design Media Query for smaller screens */
+    /* Responsive Design for Mobile Devices */
     @media (max-width: 768px) {
         .main-header {
-            padding: 20px;
+            padding: 20px 15px;
+            margin-bottom: 20px;
+            border-radius: 10px;
         }
+        
         .main-header h1 {
-            font-size: 1.8rem;
+            font-size: 1.6rem;
+            margin-bottom: 10px;
         }
+        
+        .main-header h3 {
+            font-size: 1.1rem;
+        }
+        
+        .metric-card {
+            padding: 15px;
+            margin: 8px 0;
+            border-radius: 10px;
+        }
+        
         .stTabs [data-baseweb="tab-list"] {
-            flex-wrap: wrap;
+            flex-direction: column;
+            gap: 5px;
         }
+        
+        .stTabs [data-baseweb="tab"] {
+            height: auto;
+            padding: 12px 15px;
+            font-size: 0.9rem;
+            justify-content: center;
+        }
+        
+        .result-card {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 10px;
+        }
+        
+        .question-box, .prediction-box, .optional-section {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 10px;
+        }
+        
+        /* Adjust column behavior for mobile */
+        .row-widget.stColumns {
+            flex-direction: column;
+        }
+        
+        .row-widget.stColumns > div {
+            margin-bottom: 15px;
+        }
+        
+        /* Improve button sizing */
+        .stButton button {
+            width: 100%;
+            margin: 5px 0;
+        }
+        
+        /* Better spacing for metrics */
+        .element-container .stMetric {
+            padding: 10px;
+        }
+    }
+    
+    /* Tablet Responsive */
+    @media (max-width: 1024px) and (min-width: 769px) {
+        .main-header {
+            padding: 25px;
+        }
+        
+        .main-header h1 {
+            font-size: 2rem;
+        }
+        
+        .stTabs [data-baseweb="tab"] {
+            padding: 12px 15px;
+            font-size: 0.9rem;
+        }
+    }
+    
+    /* Dark mode support */
+    @media (prefers-color-scheme: dark) {
+        .metric-card {
+            background: linear-gradient(145deg, #2d3748, #4a5568);
+            color: white;
+        }
+        
+        .result-card {
+            background: linear-gradient(145deg, #2d3748, #4a5568);
+            color: white;
+        }
+    }
+    
+    /* Loading animations */
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.7; }
+        100% { opacity: 1; }
+    }
+    
+    .loading-pulse {
+        animation: pulse 2s infinite;
+    }
+    
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+        width: 8px;
+    }
+    
+    ::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 10px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
     }
 </style>
 """, unsafe_allow_html=True)
