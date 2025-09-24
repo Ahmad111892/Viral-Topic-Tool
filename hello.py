@@ -67,6 +67,7 @@ st.markdown("""
         margin: 15px 0;
         border-left: 5px solid #007bff;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        color: black; /* Text color changed to black */
     }
     .result-card {
         background-color: #ffffff;
@@ -89,6 +90,19 @@ st.markdown("""
         border-left: 3px solid #2196F3;
         padding-left: 15px;
         margin: 20px 0;
+    }
+
+    /* Responsive Design Media Query for smaller screens */
+    @media (max-width: 768px) {
+        .main-header {
+            padding: 20px;
+        }
+        .main-header h1 {
+            font-size: 1.8rem;
+        }
+        .stTabs [data-baseweb="tab-list"] {
+            flex-wrap: wrap;
+        }
     }
 </style>
 """, unsafe_allow_html=True)
@@ -681,16 +695,6 @@ with st.sidebar:
         "Show Advanced Metrics",
         value=True,
         help="Display engagement rates and growth analytics"
-    )
-    
-    # Search limits
-    st.subheader("🔢 Search Limits")
-    default_max_results = st.slider(
-        "Default Max Channels:",
-        min_value=10,
-        max_value=200,
-        value=50,
-        help="Default maximum channels to find"
     )
     
     # API usage tracking
@@ -1364,3 +1368,4 @@ st.markdown("""
     <p><em>Powered by YouTube Data API v3, advanced mathematical models, and AI-driven intelligence</em></p>
 </div>
 """, unsafe_allow_html=True)
+
