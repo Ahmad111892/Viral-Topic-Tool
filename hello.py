@@ -386,7 +386,6 @@ body {
     }
 }
 </style>
-```
 """, unsafe_allow_html=True)
 
 # --- Mathematical Constants & Configuration ---
@@ -703,6 +702,7 @@ def find_channels_with_criteria(api_key, search_params):
     max_subscribers = search_params.get('max_subscribers', float('inf'))
     min_videos = search_params.get('min_videos', 0)
     max_videos = search_params.get('max_videos', float('inf'))
+    country = search_params.get('country', 'Any')
     
     found_channels = []
     processed_channel_ids = set()
@@ -731,6 +731,9 @@ def find_channels_with_criteria(api_key, search_params):
             end_date = f"{creation_year + 1}-01-01T00:00:00Z"
             search_query_params['publishedAfter'] = start_date
             search_query_params['publishedBefore'] = end_date
+        
+        if country != "Any":
+            search_query_params['regionCode'] = country
         
         search_response = fetch_youtube_data(YOUTUBE_SEARCH_URL, search_query_params)
         if not search_response or not search_response.get("items"):
@@ -766,6 +769,7 @@ def find_channels_with_criteria(api_key, search_params):
                     published_date = datetime.fromisoformat(
                         snippet.get("publishedAt", "").replace("Z", "+00:00")
                     )
+                    channel_country = snippet.get("country", "Unknown")
                     
                     subscribers = int(stats.get("subscriberCount", 0))
                     total_views = int(stats.get("viewCount", 0))
@@ -787,6 +791,10 @@ def find_channels_with_criteria(api_key, search_params):
                     if description_keyword and description_keyword.strip() and description_keyword.lower() not in channel_description.lower():
                         continue
                     
+                    # Apply country filter only if specified
+                    if country != "Any" and channel_country != country:
+                        continue
+                    
                     channel_age_days = (datetime.now(published_date.tzinfo) - published_date).days
                     avg_views_per_video = total_views / max(video_count, 1)
                     subscriber_velocity = subscribers / max(channel_age_days, 1)
@@ -802,7 +810,8 @@ def find_channels_with_criteria(api_key, search_params):
                         "Found Via Keyword": term,
                         "Subscriber Velocity": round(subscriber_velocity, 4),
                         "Avg Views per Video": round(avg_views_per_video, 0),
-                        "Description": channel_description[:200] + "..." if len(channel_description) > 200 else channel_description
+                        "Description": channel_description[:200] + "..." if len(channel_description) > 200 else channel_description,
+                        "Country": channel_country
                     }
                     
                     found_channels.append(channel_data)
@@ -1037,6 +1046,62 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
 
+# List of countries with ISO 3166-1 alpha-2 codes
+COUNTRY_CODES = {
+    "Any": "Any",
+    "United States": "US",
+    "Canada": "CA",
+    "United Kingdom": "GB",
+    "Australia": "AU",
+    "Germany": "DE",
+    "France": "FR",
+    "Brazil": "BR",
+    "Mexico": "MX",
+    "Russia": "RU",
+    "China": "CN",
+    "Italy": "IT",
+    "Spain": "ES",
+    "Netherlands": "NL",
+    "Sweden": "SE",
+    "Norway": "NO",
+    "South Africa": "ZA",
+    "Argentina": "AR",
+    "Egypt": "EG",
+    "Indonesia": "ID",
+    "Turkey": "TR",
+    "Nigeria": "NG",
+    "Vietnam": "VN",
+    "Philippines": "PH",
+    "Thailand": "TH",
+    "Malaysia": "MY",
+    "Singapore": "SG",
+    "New Zealand": "NZ",
+    "United Arab Emirates": "AE",
+    "Israel": "IL",
+    "Ukraine": "UA",
+    "Poland": "PL",
+    "Switzerland": "CH",
+    "Belgium": "BE",
+    "Austria": "AT",
+    "Denmark": "DK",
+    "Finland": "FI",
+    "Ireland": "IE",
+    "Portugal": "PT",
+    "Greece": "GR",
+    "Chile": "CL",
+    "Colombia": "CO",
+    "Peru": "PE",
+    "Venezuela": "VE",
+    "Ecuador": "EC",
+    "Morocco": "MA",
+    "Algeria": "DZ",
+    "Kenya": "KE",
+    "Ghana": "GH",
+    "Ethiopia": "ET",
+    "Iraq": "IQ",
+    "Iran": "IR"
+}
+
 # Main Tabs
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "🔍 Intelligent Niche Research", 
@@ -1200,6 +1265,13 @@ with tab2:
             value=100000,
             help="Set high value to include channels with any video count"
         )
+        
+        country = st.selectbox(
+            "🌍 Channel Country (Optional):",
+            list(COUNTRY_CODES.keys()),
+            index=0,
+            help="Select a country to filter channels by their location. Choose 'Any' to skip this filter."
+        )
 
     if st.button("🚀 Start Channel Discovery", type="primary", use_container_width=True):
         if not api_key:
@@ -1216,7 +1288,8 @@ with tab2:
                 'min_subscribers': min_subscribers,
                 'max_subscribers': max_subscribers,
                 'min_videos': min_videos,
-                'max_videos': max_videos
+                'max_videos': max_videos,
+                'country': COUNTRY_CODES[country]
             }
             
             with st.spinner("🔍 Searching for channels..."):
@@ -1232,7 +1305,7 @@ with tab2:
                 
                 preview_df = pd.DataFrame(channels)
                 st.dataframe(
-                    preview_df[['Channel Name', 'Subscribers', 'Video Count', 'Creation Date']].head(10),
+                    preview_df[['Channel Name', 'Subscribers', 'Video Count', 'Creation Date', 'Country']].head(10),
                     use_container_width=True
                 )
             else:
@@ -1255,10 +1328,10 @@ with tab2:
                 col5.metric("⏱️ Age", f"{channel['Channel Age (Days)']} days")
                 col6.metric("🔍 Found via", channel['Found Via Keyword'])
                 
-                if 'Recent Engagement Rate' in channel:
-                    col7, col8 = st.columns(2)
-                    col7.metric("💝 Engagement Rate", f"{channel.get('Recent Engagement Rate', 0):.3f}%")
-                    col8.metric("📈 Recent Avg Views", format_number(channel.get('Recent Avg Views', 0)))
+                col7, col8, col9 = st.columns(3)
+                col7.metric("🌍 Country", channel['Country'])
+                col8.metric("💝 Engagement Rate", f"{channel.get('Recent Engagement Rate', 0):.3f}%") if 'Recent Engagement Rate' in channel else col8.empty()
+                col9.metric("📈 Recent Avg Views", format_number(channel.get('Recent Avg Views', 0))) if 'Recent Avg Views' in channel else col9.empty()
                 
                 if channel.get('Description'):
                     st.text_area("📝 Description:", channel['Description'], height=80, key=f"desc_finder_{i}")
@@ -1650,4 +1723,3 @@ st.markdown("""
     <p><em>Powered by YouTube Data API v3, advanced mathematical models, and AI-driven intelligence</em></p>
 </div>
 """, unsafe_allow_html=True)
-
