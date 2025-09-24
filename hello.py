@@ -260,7 +260,7 @@ st.markdown("""
 
 /* Enhanced Optional Section */
 .optional-section {
-    background: linear-gradient(135deg, #fff3cd 0%, #fef9e7 100%);
+    background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 20%, #fff3cd 100%);
     border: 2px solid #ffeaa7;
     border-radius: var(--border-radius);
     padding: 20px;
@@ -280,7 +280,7 @@ st.markdown("""
 }
 
 .optional-section:hover {
-    background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 20%, #fff3cd 100%);
+    background: linear-gradient(135deg, #e17055 0%, #fdcb6e 30%, #ffeaa7 100%);
     transform: scale(1.01);
 }
 
@@ -373,6 +373,27 @@ st.markdown("""
     padding: 8px;
     border-radius: var(--border-radius);
     box-shadow: var(--shadow);
+    overflow-x: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary-color) transparent;
+}
+
+.stTabs [data-baseweb="tab-list"]::-webkit-scrollbar {
+    height: 4px;
+}
+
+.stTabs [data-baseweb="tab-list"]::-webkit-scrollbar-track {
+    background: rgba(0,0,0,0.1);
+    border-radius: 10px;
+}
+
+.stTabs [data-baseweb="tab-list"]::-webkit-scrollbar-thumb {
+    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+    border-radius: 10px;
+}
+
+.stTabs [data-baseweb="tab-list"]::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
 }
 
 .stTabs [data-baseweb="tab"] {
@@ -380,6 +401,8 @@ st.markdown("""
     border-radius: 8px;
     transition: var(--transition);
     font-weight: 500;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .stTabs [data-baseweb="tab"]:hover {
